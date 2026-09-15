@@ -1,0 +1,198 @@
+openapi: 3.0.3
+info:
+  title: Oscar Service
+  description: |
+    Второй веб-сервис, располагающийся на URL `/oscar`. Реализует дополнительные
+    операции, связанные с вызовом API первого сервиса (Movie Collection Service).
+
+    Сервис хранит собственные данные об Оскарах и операторах: каждый Оскар привязан
+    к фильму (по ИД фильма) и оператору. Сведения о самих фильмах (жанр, режиссёр)
+    подтягиваются по API первого сервиса.
+
+    Коды ответов: 200 — успех, 400 — некорректный запрос, 404 — нет данных в жанре,
+    406 — недопустимый Accept, 502 — некорректный ответ первого сервиса,
+    503 — первый сервис недоступен, 504 — таймаут первого сервиса,
+    500 — внутренняя ошибка сервера.
+  version: 1.0.0
+  contact:
+    name: SOA Lab
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: /oscar
+    description: Локальный сервер Oscar Service
+security: []
+tags:
+  - name: Operators
+    description: Операции над операторами
+  - name: Directors
+    description: Операции над режиссёрами и Оскарами
+paths:
+  /operators/get-loosers:
+    get:
+      tags:
+        - Operators
+      operationId: getLoosers
+      summary: Получить список операторов, ни один фильм которых не получил Оскара
+      description: |
+        Возвращает список операторов, ни один фильм которых не получил ни одного
+        «Оскара». Фильмы операторов определяются по данным первого сервиса.
+      responses:
+        '200':
+          description: Список операторов без Оскаров
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Operator'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /directors/humiliate-by-genre/{genre}:
+    post:
+      tags:
+        - Directors
+      operationId: humiliateDirectorsByGenre
+      summary: Отобрать все Оскары у фильмов режиссёров, снявших в указанном жанре
+      description: |
+        Отбирает все «Оскары» у всех фильмов режиссёров, снявших хотя бы один фильм
+        в указанном жанре. Жанр передаётся в пути запроса. Возвращает сводку
+        о количестве отозванных Оскаров.
+      parameters:
+        - name: genre
+          in: path
+          required: true
+          description: Жанр, по которому отбираются режиссёры
+          schema:
+            $ref: '#/components/schemas/MovieGenre'
+      responses:
+        '200':
+          description: Операция выполнена успешно, Оскары отозваны
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HumiliationResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+components:
+  schemas:
+    Operator:
+      type: object
+      description: Оператор, который может привязывать Оскары к фильмам
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Уникальный ИД оператора
+        name:
+          type: string
+          description: Имя оператора
+    MovieGenre:
+      type: string
+      description: Жанр фильма (совпадает с жанром первого сервиса)
+      enum:
+        - ACTION
+        - DRAMA
+        - ADVENTURE
+        - FANTASY
+    HumiliationResult:
+      type: object
+      description: Результат операции отбора Оскаров
+      required:
+        - genre
+        - affectedDirectors
+        - revokedOscars
+      properties:
+        genre:
+          $ref: '#/components/schemas/MovieGenre'
+        affectedDirectors:
+          type: integer
+          format: int32
+          description: Количество режиссёров, у фильмов которых отозваны Оскары
+          minimum: 0
+        revokedOscars:
+          type: integer
+          format: int32
+          description: Количество отозванных Оскаров
+          minimum: 0
+    ApiError:
+      type: object
+      description: Описание ошибки
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: integer
+          format: int32
+          description: HTTP-код ответа
+        message:
+          type: string
+          description: Текстовое описание ошибки
+  responses:
+    BadRequest:
+      description: Некорректный запрос (например, невалидное значение жанра)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    NotFound:
+      description: В указанном жанре не найдено ни одного фильма/режиссёра
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    NotAcceptable:
+      description: Клиент указал в заголовке Accept формат, отличный от application/json
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    BadGateway:
+      description: Первый сервис (Movie Collection Service) вернул некорректный ответ
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    ServiceUnavailable:
+      description: Первый сервис (Movie Collection Service) временно недоступен
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    GatewayTimeout:
+      description: Первый сервис (Movie Collection Service) не ответил в течение отведённого времени
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    InternalServerError:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'

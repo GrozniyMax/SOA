@@ -1,0 +1,522 @@
+openapi: 3.0.3
+info:
+  title: Movie Collection Service
+  description: |
+    Веб-сервис управления коллекцией объектов Movie.
+
+    Поддерживает базовый набор операций с коллекцией (добавление, получение по ИД,
+    обновление, удаление, получение массива), сортировку/фильтрацию по любой комбинации
+    полей и постраничный вывод, а также дополнительные операции над коллекцией.
+
+    Все параметры операций передаются в URL запроса, данные объектов — в формате JSON.
+    При передаче данных, нарушающих заданные на уровне класса ограничения целостности,
+    сервис возвращает код ответа HTTP, соответствующий произошедшей ошибке.
+
+    Коды ответов: 200/201/204 — успех, 400 — некорректный формат/параметры,
+    404 — объект не найден, 406 — недопустимый Accept, 415 — тело не в JSON,
+    422 — нарушение ограничений целостности, 500 — внутренняя ошибка сервера.
+  version: 1.0.0
+  contact:
+    name: SOA Lab
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: /
+    description: Локальный сервер коллекции Movie
+security: []
+tags:
+  - name: Movies
+    description: Операции над коллекцией объектов Movie
+paths:
+  /movies:
+    post:
+      tags:
+        - Movies
+      operationId: addMovie
+      summary: Добавить новый элемент в коллекцию
+      description: |
+        Добавляет новый объект Movie в коллекцию. Поля `id` и `creationDate`
+        генерируются сервисом автоматически и не должны передаваться в запросе.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovieRequest'
+      responses:
+        '201':
+          description: Объект успешно создан
+          headers:
+            Location:
+              description: URL созданного объекта
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    get:
+      tags:
+        - Movies
+      operationId: getMovies
+      summary: Получить массив элементов коллекции
+      description: |
+        Возвращает выборку объектов Movie с поддержкой сортировки, фильтрации
+        по любой комбинации полей и постраничного вывода.
+
+        Параметры фильтрации задаются по именам полей объекта (например `name`,
+        `genre`, `oscarsCount`, `totalBoxOffice`, `tagline`, `coordinates.x`,
+        `director.name`). Фильтрация выполняется по точному совпадению значения поля.
+
+        Параметр `sort` задаёт список полей с направлением через запятую,
+        направление указывается суффиксом `:asc` или `:desc` (по умолчанию `asc`).
+      parameters:
+        - name: page
+          in: query
+          description: Порядковый номер страницы (начиная с 0)
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          description: Размер страницы
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: sort
+          in: query
+          description: Поля сортировки с направлением, например `name:asc,oscarsCount:desc`
+          required: false
+          schema:
+            type: string
+            example: name:asc,oscarsCount:desc
+        - name: name
+          in: query
+          description: Фильтр по полю name
+          required: false
+          schema:
+            type: string
+        - name: genre
+          in: query
+          description: Фильтр по полю genre
+          required: false
+          schema:
+            $ref: '#/components/schemas/MovieGenre'
+        - name: oscarsCount
+          in: query
+          description: Фильтр по полю oscarsCount
+          required: false
+          schema:
+            type: integer
+        - name: totalBoxOffice
+          in: query
+          description: Фильтр по полю totalBoxOffice
+          required: false
+          schema:
+            type: number
+            format: float
+        - name: tagline
+          in: query
+          description: Фильтр по полю tagline
+          required: false
+          schema:
+            type: string
+        - name: director.name
+          in: query
+          description: Фильтр по имени режиссёра
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Успешная выборка элементов коллекции
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /movies/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: ИД объекта Movie (целое число больше 0)
+        schema:
+          type: integer
+          minimum: 1
+    get:
+      tags:
+        - Movies
+      operationId: getMovieById
+      summary: Получить элемент коллекции по ИД
+      responses:
+        '200':
+          description: Объект найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags:
+        - Movies
+      operationId: updateMovie
+      summary: Обновить элемент коллекции по ИД
+      description: |
+        Полностью обновляет объект Movie с указанным ИД. Поля `id` и `creationDate`
+        не изменяются.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovieRequest'
+      responses:
+        '200':
+          description: Объект успешно обновлён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags:
+        - Movies
+      operationId: deleteMovie
+      summary: Удалить элемент коллекции по ИД
+      responses:
+        '204':
+          description: Объект успешно удалён (тело ответа отсутствует)
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /movies/max-tagline:
+    get:
+      tags:
+        - Movies
+      operationId: getMovieWithMaxTagline
+      summary: Вернуть один (любой) объект с максимальным значением tagline
+      description: |
+        Возвращает один произвольный объект Movie, значение поля `tagline` которого
+        является максимальным среди всех объектов коллекции.
+      responses:
+        '200':
+          description: Объект с максимальным tagline
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /movies/directors-greater-than:
+    get:
+      tags:
+        - Movies
+      operationId: getMoviesByDirectorGreaterThan
+      summary: Вернуть массив объектов, значение director которых больше заданного
+      description: |
+        Возвращает массив объектов Movie, значение поля `director` которых больше
+        заданного. Сравнение режиссёров выполняется по имени (director.name).
+      parameters:
+        - name: director
+          in: query
+          required: true
+          description: Значение для сравнения (имя режиссёра)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Массив объектов, удовлетворяющих условию
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Movie'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /movies/genres:
+    get:
+      tags:
+        - Movies
+      operationId: getUniqueGenres
+      summary: Вернуть массив уникальных значений поля genre
+      description: |
+        Возвращает массив уникальных значений поля `genre` по всем объектам коллекции.
+      responses:
+        '200':
+          description: Массив уникальных жанров
+          content:
+            application/json:
+              schema:
+                type: array
+                uniqueItems: true
+                items:
+                  $ref: '#/components/schemas/MovieGenre'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+components:
+  schemas:
+    Movie:
+      type: object
+      description: Объект коллекции Movie
+      required:
+        - id
+        - name
+        - coordinates
+        - creationDate
+        - genre
+        - director
+      properties:
+        id:
+          type: integer
+          format: int32
+          description: Уникальный ИД, генерируется автоматически, должен быть больше 0
+          minimum: 1
+          readOnly: true
+        name:
+          type: string
+          description: Название фильма, не может быть null или пустой строкой
+          minLength: 1
+        coordinates:
+          $ref: '#/components/schemas/Coordinates'
+        creationDate:
+          type: string
+          format: date-time
+          description: Дата создания записи, генерируется автоматически
+          readOnly: true
+        oscarsCount:
+          type: integer
+          format: int32
+          description: Количество Оскаров, может быть null, должно быть больше 0
+          minimum: 1
+          nullable: true
+        totalBoxOffice:
+          type: number
+          format: float
+          description: Общие кассовые сборы, может быть null, должно быть больше 0
+          minimum: 0
+          exclusiveMinimum: true
+          nullable: true
+        tagline:
+          type: string
+          description: Слоган, может быть null, длина не больше 181
+          maxLength: 181
+          nullable: true
+        genre:
+          $ref: '#/components/schemas/MovieGenre'
+        director:
+          $ref: '#/components/schemas/Person'
+    MovieRequest:
+      type: object
+      description: Запрос на создание/обновление объекта Movie (без авто-полей)
+      required:
+        - name
+        - coordinates
+        - genre
+        - director
+      properties:
+        name:
+          type: string
+          minLength: 1
+        coordinates:
+          $ref: '#/components/schemas/Coordinates'
+        oscarsCount:
+          type: integer
+          format: int32
+          minimum: 1
+          nullable: true
+        totalBoxOffice:
+          type: number
+          format: float
+          minimum: 0
+          exclusiveMinimum: true
+          nullable: true
+        tagline:
+          type: string
+          maxLength: 181
+          nullable: true
+        genre:
+          $ref: '#/components/schemas/MovieGenre'
+        director:
+          $ref: '#/components/schemas/Person'
+    Coordinates:
+      type: object
+      description: Координаты фильма
+      required:
+        - x
+        - y
+      properties:
+        x:
+          type: integer
+          format: int32
+        y:
+          type: number
+          format: float
+    Person:
+      type: object
+      description: Режиссёр фильма
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Имя, не может быть null или пустой строкой
+          minLength: 1
+        birthday:
+          type: string
+          format: date-time
+          description: Дата рождения, может быть null
+          nullable: true
+        eyeColor:
+          $ref: '#/components/schemas/Color'
+        hairColor:
+          $ref: '#/components/schemas/Color'
+    MovieGenre:
+      type: string
+      description: Жанр фильма
+      enum:
+        - ACTION
+        - DRAMA
+        - ADVENTURE
+        - FANTASY
+    Color:
+      type: string
+      description: Цвет (объединение значений из ТЗ)
+      enum:
+        - RED
+        - BLACK
+        - ORANGE
+        - BROWN
+        - GREEN
+        - BLUE
+    Page:
+      type: object
+      description: Страница результатов выборки
+      required:
+        - items
+        - total
+        - page
+        - size
+      properties:
+        items:
+          type: array
+          description: Элементы текущей страницы
+          items:
+            $ref: '#/components/schemas/Movie'
+        total:
+          type: integer
+          format: int64
+          description: Общее количество элементов, удовлетворяющих условиям выборки
+          minimum: 0
+        page:
+          type: integer
+          format: int32
+          description: Порядковый номер текущей страницы
+          minimum: 0
+        size:
+          type: integer
+          format: int32
+          description: Размер страницы
+          minimum: 1
+    ApiError:
+      type: object
+      description: Описание ошибки
+      required:
+        - status
+        - message
+      properties:
+        status:
+          type: integer
+          format: int32
+          description: HTTP-код ответа
+        message:
+          type: string
+          description: Текстовое описание ошибки
+  responses:
+    BadRequest:
+      description: Некорректный запрос — невалидные параметры или некорректный формат данных
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    NotAcceptable:
+      description: Клиент указал в заголовке Accept формат, отличный от application/json
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    UnsupportedMediaType:
+      description: Тело запроса передано не в формате application/json
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    UnprocessableEntity:
+      description: Данные не прошли проверку ограничений целостности (пустое name, oscarsCount <= 0, tagline длиннее 181 и т.п.)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    NotFound:
+      description: Объект с указанным ИД не найден
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    InternalServerError:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
