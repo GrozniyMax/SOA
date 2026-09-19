@@ -58,6 +58,8 @@ paths:
                 $ref: '#/components/schemas/Movie'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
         '415':
           $ref: '#/components/responses/UnsupportedMediaType'
         '422':
@@ -141,6 +143,45 @@ paths:
           required: false
           schema:
             type: string
+        - name: coordinates.x
+          in: query
+          description: Фильтр по полю coordinates.x
+          required: false
+          schema:
+            type: integer
+        - name: coordinates.y
+          in: query
+          description: Фильтр по полю coordinates.y
+          required: false
+          schema:
+            type: number
+            format: float
+        - name: creationDate
+          in: query
+          description: Фильтр по полю creationDate
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: director.birthday
+          in: query
+          description: Фильтр по полю director.birthday
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: director.eyeColor
+          in: query
+          description: Фильтр по полю director.eyeColor
+          required: false
+          schema:
+            $ref: '#/components/schemas/EyeColor'
+        - name: director.hairColor
+          in: query
+          description: Фильтр по полю director.hairColor
+          required: false
+          schema:
+            $ref: '#/components/schemas/HairColor'
       responses:
         '200':
           description: Успешная выборка элементов коллекции
@@ -208,6 +249,8 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
         '415':
           $ref: '#/components/responses/UnsupportedMediaType'
         '422':
@@ -245,7 +288,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Movie'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/NoMovieWithTagline'
         '406':
           $ref: '#/components/responses/NotAcceptable'
         '500':
@@ -299,8 +342,6 @@ paths:
                 uniqueItems: true
                 items:
                   $ref: '#/components/schemas/MovieGenre'
-        '400':
-          $ref: '#/components/responses/BadRequest'
         '406':
           $ref: '#/components/responses/NotAcceptable'
         '500':
@@ -419,9 +460,9 @@ components:
           description: Дата рождения, может быть null
           nullable: true
         eyeColor:
-          $ref: '#/components/schemas/Color'
+          $ref: '#/components/schemas/EyeColor'
         hairColor:
-          $ref: '#/components/schemas/Color'
+          $ref: '#/components/schemas/HairColor'
     MovieGenre:
       type: string
       description: Жанр фильма
@@ -430,15 +471,20 @@ components:
         - DRAMA
         - ADVENTURE
         - FANTASY
-    Color:
+    EyeColor:
       type: string
-      description: Цвет (объединение значений из ТЗ)
+      description: Цвет глаз (первый enum Color из ТЗ)
       enum:
         - RED
         - BLACK
         - ORANGE
         - BROWN
+    HairColor:
+      type: string
+      description: Цвет волос (второй enum Color из ТЗ)
+      enum:
         - GREEN
+        - BLACK
         - BLUE
     Page:
       type: object
@@ -510,6 +556,12 @@ components:
             $ref: '#/components/schemas/ApiError'
     NotFound:
       description: Объект с указанным ИД не найден
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    NoMovieWithTagline:
+      description: В коллекции нет ни одного фильма с непустым tagline
       content:
         application/json:
           schema:

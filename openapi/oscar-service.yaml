@@ -9,7 +9,7 @@ info:
     к фильму (по ИД фильма) и оператору. Сведения о самих фильмах (жанр, режиссёр)
     подтягиваются по API первого сервиса.
 
-    Коды ответов: 200 — успех, 400 — некорректный запрос, 404 — нет данных в жанре,
+    Коды ответов: 200 — успех, 400 — некорректный запрос,
     406 — недопустимый Accept, 502 — некорректный ответ первого сервиса,
     503 — первый сервис недоступен, 504 — таймаут первого сервиса,
     500 — внутренняя ошибка сервера.
@@ -29,11 +29,11 @@ tags:
   - name: Directors
     description: Операции над режиссёрами и Оскарами
 paths:
-  /operators/get-loosers:
+  /operators/losers:
     get:
       tags:
         - Operators
-      operationId: getLoosers
+      operationId: getLosers
       summary: Получить список операторов, ни один фильм которых не получил Оскара
       description: |
         Возвращает список операторов, ни один фильм которых не получил ни одного
@@ -47,8 +47,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Operator'
-        '400':
-          $ref: '#/components/responses/BadRequest'
         '406':
           $ref: '#/components/responses/NotAcceptable'
         '502':
@@ -69,6 +67,10 @@ paths:
         Отбирает все «Оскары» у всех фильмов режиссёров, снявших хотя бы один фильм
         в указанном жанре. Жанр передаётся в пути запроса. Возвращает сводку
         о количестве отозванных Оскаров.
+
+        Если в указанном жанре не найдено ни одного фильма (а значит, и режиссёров),
+        операция не считается ошибкой: возвращается 200 с нулевыми значениями
+        (`affectedDirectors: 0`, `revokedOscars: 0`).
       parameters:
         - name: genre
           in: path
@@ -85,8 +87,8 @@ paths:
                 $ref: '#/components/schemas/HumiliationResult'
         '400':
           $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
         '502':
           $ref: '#/components/responses/BadGateway'
         '503':
@@ -99,7 +101,7 @@ components:
   schemas:
     Operator:
       type: object
-      description: Оператор, который может привязывать Оскары к фильмам
+      description: Оператор, к которому привязан Оскар
       required:
         - id
         - name
@@ -156,12 +158,6 @@ components:
   responses:
     BadRequest:
       description: Некорректный запрос (например, невалидное значение жанра)
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ApiError'
-    NotFound:
-      description: В указанном жанре не найдено ни одного фильма/режиссёра
       content:
         application/json:
           schema:
