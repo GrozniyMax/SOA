@@ -81,6 +81,9 @@ paths:
 
         Параметр `sort` задаёт список полей с направлением через запятую,
         направление указывается суффиксом `:asc` или `:desc` (по умолчанию `asc`).
+
+        Для фильтрации по любой комбинации полей есть `POST /movies/search`,
+        где фильтр передаётся телом запроса.
       parameters:
         - name: page
           in: query
@@ -193,6 +196,40 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '406':
           $ref: '#/components/responses/NotAcceptable'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /movies/search:
+    post:
+      tags:
+        - Movies
+      operationId: searchMovies
+      summary: Получить массив элементов коллекции (фильтр в теле запроса)
+      description: |
+        Возвращает ту же выборку, что и `GET /movies`, но фильтр, сортировка и
+        параметры страницы передаются в теле запроса. Фильтрация доступна по любой
+        комбинации полей, вложенные поля передаются вложенными объектами.
+
+        Поле, не переданное в теле, не участвует в фильтрации. Новых объектов
+        операция не создаёт, поэтому возвращает 200, а не 201.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovieSearchRequest'
+      responses:
+        '200':
+          description: Успешная выборка элементов коллекции
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '500':
           $ref: '#/components/responses/InternalServerError'
   /movies/{id}:
@@ -431,6 +468,77 @@ components:
           $ref: '#/components/schemas/MovieGenre'
         director:
           $ref: '#/components/schemas/Person'
+    MovieSearchRequest:
+      type: object
+      description: |
+        Фильтр, сортировка и параметры страницы для POST /movies/search.
+        Все поля необязательные: не переданное поле не фильтрует выборку.
+      properties:
+        id:
+          type: integer
+          format: int32
+          minimum: 1
+          description: Фильтр по полю id
+        name:
+          type: string
+          description: Фильтр по полю name
+        coordinates:
+          type: object
+          description: Фильтр по полям вложенного объекта coordinates
+          properties:
+            x:
+              type: integer
+              format: int32
+            y:
+              type: number
+              format: float
+        creationDate:
+          type: string
+          format: date
+          description: Фильтр по дате создания (день, без учёта времени)
+        oscarsCount:
+          type: integer
+          format: int32
+          minimum: 1
+          description: Фильтр по полю oscarsCount
+        totalBoxOffice:
+          type: number
+          format: float
+          description: Фильтр по полю totalBoxOffice
+        tagline:
+          type: string
+          maxLength: 181
+          description: Фильтр по полю tagline
+        genre:
+          $ref: '#/components/schemas/MovieGenre'
+        director:
+          type: object
+          description: Фильтр по полям вложенного объекта director
+          properties:
+            name:
+              type: string
+            birthday:
+              type: string
+              format: date
+            eyeColor:
+              $ref: '#/components/schemas/EyeColor'
+            hairColor:
+              $ref: '#/components/schemas/HairColor'
+        page:
+          type: integer
+          minimum: 0
+          default: 0
+          description: Порядковый номер страницы (начиная с 0)
+        size:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+          description: Размер страницы
+        sort:
+          type: string
+          description: Поля сортировки с направлением через запятую, как в GET /movies
+          example: name:asc,oscarsCount:desc
     Coordinates:
       type: object
       description: Координаты фильма
@@ -473,19 +581,19 @@ components:
         - FANTASY
     EyeColor:
       type: string
-      description: Цвет глаз (первый enum Color из ТЗ)
+      description: Цвет глаз
+      enum:
+        - GREEN
+        - BLACK
+        - BLUE
+    HairColor:
+      type: string
+      description: Цвет волос
       enum:
         - RED
         - BLACK
         - ORANGE
         - BROWN
-    HairColor:
-      type: string
-      description: Цвет волос (второй enum Color из ТЗ)
-      enum:
-        - GREEN
-        - BLACK
-        - BLUE
     Page:
       type: object
       description: Страница результатов выборки
