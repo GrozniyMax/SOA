@@ -85,23 +85,8 @@ paths:
         Для фильтрации по любой комбинации полей есть `POST /movies/search`,
         где фильтр передаётся телом запроса.
       parameters:
-        - name: page
-          in: query
-          description: Порядковый номер страницы (начиная с 0)
-          required: false
-          schema:
-            type: integer
-            minimum: 0
-            default: 0
-        - name: size
-          in: query
-          description: Размер страницы
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
         - name: sort
           in: query
           description: Поля сортировки с направлением, например `name:asc,oscarsCount:desc`
@@ -290,23 +275,8 @@ paths:
           description: Значение для сравнения (имя режиссёра)
           schema:
             type: string
-        - name: page
-          in: query
-          description: Порядковый номер страницы (начиная с 0)
-          required: false
-          schema:
-            type: integer
-            minimum: 0
-            default: 0
-        - name: size
-          in: query
-          description: Размер страницы
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
       responses:
         '200':
           description: Страница объектов, удовлетворяющих условию
@@ -329,23 +299,8 @@ paths:
       description: |
         Возвращает массив уникальных значений поля `genre` по всем объектам коллекции.
       parameters:
-        - name: page
-          in: query
-          description: Порядковый номер страницы (начиная с 0)
-          required: false
-          schema:
-            type: integer
-            minimum: 0
-            default: 0
-        - name: size
-          in: query
-          description: Размер страницы
-          required: false
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
       responses:
         '200':
           description: Страница уникальных жанров
@@ -642,6 +597,26 @@ components:
         message:
           type: string
           description: Текстовое описание ошибки
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      description: Порядковый номер страницы (начиная с 0)
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    SizeParam:
+      name: size
+      in: query
+      description: Размер страницы
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
   responses:
     BadRequest:
       description: Некорректный запрос — невалидные параметры или некорректный формат данных
