@@ -59,58 +59,7 @@ paths:
           $ref: '#/components/responses/UnprocessableEntity'
         '500':
           $ref: '#/components/responses/InternalServerError'
-    get:
-      tags:
-        - Movies
-      operationId: getMovies
-      summary: Получить массив элементов коллекции
-      description: |
-        Возвращает выборку объектов Movie с поддержкой сортировки, фильтрации
-        по любой комбинации полей и постраничного вывода.
 
-      parameters:
-        - $ref: '#/components/parameters/PageParam'
-        - $ref: '#/components/parameters/SizeParam'
-        - name: sort
-          in: query
-          description: Поля сортировки с направлением, например `name:asc,oscarsCount:desc`
-          required: false
-          schema:
-            type: string
-            example: name:asc,oscarsCount:desc
-        - name: filterPath
-          in: query
-          description: Путь до поля фильтрации
-          required: false
-          schema:
-            $ref: '#/components/schemas/HairColor'
-        - name: filterValue
-          in: query
-          description: Значение поля фильтрации
-          required: false
-          schema:
-            type: string
-        - name: comparator
-          in: query
-          description: |
-            Оператор сравнения для фильтрации.
-            Если не указан, используется `eq` (равно).
-          required: false
-          schema:
-            $ref: '#/components/schemas/Comparator'
-      responses:
-        '200':
-          description: Успешная выборка элементов коллекции
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MoviePage'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '406':
-          $ref: '#/components/responses/NotAcceptable'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
   /movies/search:
     post:
       tags:
@@ -118,9 +67,8 @@ paths:
       operationId: searchMovies
       summary: Получить массив элементов коллекции (фильтр в теле запроса)
       description: |
-        Возвращает ту же выборку, что и `GET /movies`, но фильтр, сортировка и
-        параметры страницы передаются в теле запроса. Фильтрация доступна по любой
-        комбинации полей, вложенные поля передаются вложенными объектами.
+        Возвращает выборку объектов Movie: фильтры, сортировка и параметры страницы
+        передаются в теле запроса. 
 
       requestBody:
         required: true
@@ -219,7 +167,7 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
-  /movies/max-tagline:
+  /movies/by-max-tagline:
     get:
       tags:
         - Movies
@@ -241,7 +189,7 @@ paths:
           $ref: '#/components/responses/NotAcceptable'
         '500':
           $ref: '#/components/responses/InternalServerError'
-  /movies/directors-greater-than:
+  /movies/by-directors-greater-than:
     get:
       tags:
         - Movies
@@ -382,59 +330,18 @@ components:
     MovieSearchRequest:
       type: object
       description: |
-        Фильтр, сортировка и параметры страницы для POST /movies/search.
-        Все поля необязательные: не переданное поле не фильтрует выборку.
+        Фильтры, сортировка и параметры страницы для POST /movies/search.
+        Все поля необязательные: без фильтров возвращается вся коллекция.
       properties:
-        id:
-          type: integer
-          format: int32
-          minimum: 1
-          description: Фильтр по полю id
-        name:
+        filters:
+          type: array
+          description: Условия фильтрации, объединяются через И
+          items:
+            $ref: '#/components/schemas/MovieFilter'
+        sort:
           type: string
-          description: Фильтр по полю name
-        coordinates:
-          type: object
-          description: Фильтр по полям вложенного объекта coordinates
-          properties:
-            x:
-              type: integer
-              format: int32
-            y:
-              type: number
-              format: float
-        creationDate:
-          type: string
-          format: date
-          description: Фильтр по дате создания (день, без учёта времени)
-        oscarsCount:
-          type: integer
-          format: int32
-          minimum: 1
-          description: Фильтр по полю oscarsCount
-        totalBoxOffice:
-          type: number
-          format: float
-          description: Фильтр по полю totalBoxOffice
-        tagline:
-          type: string
-          maxLength: 181
-          description: Фильтр по полю tagline
-        genre:
-          $ref: '#/components/schemas/MovieGenre'
-        director:
-          type: object
-          description: Фильтр по полям вложенного объекта director
-          properties:
-            name:
-              type: string
-            birthday:
-              type: string
-              format: date
-            eyeColor:
-              $ref: '#/components/schemas/EyeColor'
-            hairColor:
-              $ref: '#/components/schemas/HairColor'
+          description: Поля сортировки с направлением через запятую, как в GET /movies
+          example: name:asc,oscarsCount:desc
         page:
           type: integer
           minimum: 0
@@ -446,10 +353,38 @@ components:
           maximum: 100
           default: 20
           description: Размер страницы
-        sort:
+    MovieFilter:
+      type: object
+      description: Одно условие фильтрации
+      required:
+        - path
+        - value
+      properties:
+        path:
+          $ref: '#/components/schemas/MovieFieldPath'
+        value:
           type: string
-          description: Поля сортировки с направлением через запятую, как в GET /movies
-          example: name:asc,oscarsCount:desc
+          description: Значение для сравнения в строковом виде, например `DRAMA` или `4`
+          example: DRAMA
+        comparator:
+          $ref: '#/components/schemas/Comparator'
+    MovieFieldPath:
+      type: string
+      description: Путь до поля объекта Movie, по которому выполняется фильтрация
+      enum:
+        - id
+        - name
+        - coordinates.x
+        - coordinates.y
+        - creationDate
+        - oscarsCount
+        - totalBoxOffice
+        - tagline
+        - genre
+        - director.name
+        - director.birthday
+        - director.eyeColor
+        - director.hairColor
     Coordinates:
       type: object
       description: Координаты фильма
@@ -509,7 +444,8 @@ components:
       type: string
       description: |
         Оператор сравнения для фильтрации.
-        По умолчанию (если параметр не указан) используется `eq`.
+        По умолчанию (если поле не указано) используется `eq`.
+      default: eq
       enum:
         - gt
         - lt
