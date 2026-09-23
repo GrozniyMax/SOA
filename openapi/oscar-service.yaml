@@ -40,15 +40,31 @@ paths:
       description: |
         Возвращает список операторов, ни один фильм которых не получил ни одного
         «Оскара». Фильмы операторов определяются по данным первого сервиса.
+      parameters:
+        - name: page
+          in: query
+          description: Порядковый номер страницы (начиная с 0)
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          description: Размер страницы
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
       responses:
         '200':
-          description: Список операторов без Оскаров
+          description: Страница операторов без Оскаров
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Operator'
+                $ref: '#/components/schemas/Page'
         '406':
           $ref: '#/components/responses/NotAcceptable'
         '502':
@@ -59,7 +75,7 @@ paths:
           $ref: '#/components/responses/GatewayTimeout'
         '500':
           $ref: '#/components/responses/InternalServerError'
-  /directors/humiliate-by-genre/{genre}:
+  /directors/by-genre/{genre}/oscars:
     post:
       tags:
         - Directors
@@ -143,6 +159,35 @@ components:
           format: int32
           description: Количество отозванных Оскаров
           minimum: 0
+    Page:
+      type: object
+      description: Страница результатов выборки
+      required:
+        - items
+        - total
+        - page
+        - size
+      properties:
+        items:
+          type: array
+          description: Операторы текущей страницы
+          items:
+            $ref: '#/components/schemas/Operator'
+        total:
+          type: integer
+          format: int64
+          description: Общее количество операторов, удовлетворяющих условиям выборки
+          minimum: 0
+        page:
+          type: integer
+          format: int32
+          description: Порядковый номер текущей страницы
+          minimum: 0
+        size:
+          type: integer
+          format: int32
+          description: Размер страницы
+          minimum: 1
     ApiError:
       type: object
       description: Описание ошибки

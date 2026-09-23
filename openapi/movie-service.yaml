@@ -109,89 +109,33 @@ paths:
           schema:
             type: string
             example: name:asc,oscarsCount:desc
-        - name: name
+        - name: filterPath
           in: query
-          description: Фильтр по полю name
-          required: false
-          schema:
-            type: string
-        - name: genre
-          in: query
-          description: Фильтр по полю genre
-          required: false
-          schema:
-            $ref: '#/components/schemas/MovieGenre'
-        - name: oscarsCount
-          in: query
-          description: Фильтр по полю oscarsCount
-          required: false
-          schema:
-            type: integer
-        - name: totalBoxOffice
-          in: query
-          description: Фильтр по полю totalBoxOffice
-          required: false
-          schema:
-            type: number
-            format: float
-        - name: tagline
-          in: query
-          description: Фильтр по полю tagline
-          required: false
-          schema:
-            type: string
-        - name: director.name
-          in: query
-          description: Фильтр по имени режиссёра
-          required: false
-          schema:
-            type: string
-        - name: coordinates.x
-          in: query
-          description: Фильтр по полю coordinates.x
-          required: false
-          schema:
-            type: integer
-        - name: coordinates.y
-          in: query
-          description: Фильтр по полю coordinates.y
-          required: false
-          schema:
-            type: number
-            format: float
-        - name: creationDate
-          in: query
-          description: Фильтр по полю creationDate
-          required: false
-          schema:
-            type: string
-            format: date-time
-        - name: director.birthday
-          in: query
-          description: Фильтр по полю director.birthday
-          required: false
-          schema:
-            type: string
-            format: date-time
-        - name: director.eyeColor
-          in: query
-          description: Фильтр по полю director.eyeColor
-          required: false
-          schema:
-            $ref: '#/components/schemas/EyeColor'
-        - name: director.hairColor
-          in: query
-          description: Фильтр по полю director.hairColor
+          description: Путь до поля фильтрации
           required: false
           schema:
             $ref: '#/components/schemas/HairColor'
+        - name: filterValue
+          in: query
+          description: Значение поля фильтрации
+          required: false
+          schema:
+            type: string
+        - name: comparator
+          in: query
+          description: |
+            Оператор сравнения для фильтрации.
+            Если не указан, используется `eq` (равно).
+          required: false
+          schema:
+            $ref: '#/components/schemas/Comparator'
       responses:
         '200':
           description: Успешная выборка элементов коллекции
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Page'
+                $ref: '#/components/schemas/MoviePage'
         '400':
           $ref: '#/components/responses/BadRequest'
         '406':
@@ -223,7 +167,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Page'
+                $ref: '#/components/schemas/MoviePage'
         '400':
           $ref: '#/components/responses/BadRequest'
         '406':
@@ -346,15 +290,30 @@ paths:
           description: Значение для сравнения (имя режиссёра)
           schema:
             type: string
+        - name: page
+          in: query
+          description: Порядковый номер страницы (начиная с 0)
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          description: Размер страницы
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
       responses:
         '200':
-          description: Массив объектов, удовлетворяющих условию
+          description: Страница объектов, удовлетворяющих условию
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Movie'
+                $ref: '#/components/schemas/MoviePage'
         '400':
           $ref: '#/components/responses/BadRequest'
         '406':
@@ -369,16 +328,31 @@ paths:
       summary: Вернуть массив уникальных значений поля genre
       description: |
         Возвращает массив уникальных значений поля `genre` по всем объектам коллекции.
+      parameters:
+        - name: page
+          in: query
+          description: Порядковый номер страницы (начиная с 0)
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          description: Размер страницы
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
       responses:
         '200':
-          description: Массив уникальных жанров
+          description: Страница уникальных жанров
           content:
             application/json:
               schema:
-                type: array
-                uniqueItems: true
-                items:
-                  $ref: '#/components/schemas/MovieGenre'
+                $ref: '#/components/schemas/GenrePage'
         '406':
           $ref: '#/components/responses/NotAcceptable'
         '500':
@@ -594,9 +568,22 @@ components:
         - BLACK
         - ORANGE
         - BROWN
+    Comparator:
+      type: string
+      description: |
+        Оператор сравнения для фильтрации.
+        По умолчанию (если параметр не указан) используется `eq`.
+      enum:
+        - gt
+        - lt
+        - eq
+        - substring
     Page:
       type: object
-      description: Страница результатов выборки
+      description: |
+        Обобщённая страница результатов выборки. Переиспользуется через `allOf`
+        конкретными страницами (например, `MoviePage`), которые уточняют тип
+        элементов поля `items`.
       required:
         - items
         - total
@@ -606,8 +593,6 @@ components:
         items:
           type: array
           description: Элементы текущей страницы
-          items:
-            $ref: '#/components/schemas/Movie'
         total:
           type: integer
           format: int64
@@ -623,6 +608,26 @@ components:
           format: int32
           description: Размер страницы
           minimum: 1
+    MoviePage:
+      description: Страница результатов с объектами Movie
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Movie'
+    GenrePage:
+      description: Страница результатов с уникальными жанрами
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/MovieGenre'
     ApiError:
       type: object
       description: Описание ошибки
