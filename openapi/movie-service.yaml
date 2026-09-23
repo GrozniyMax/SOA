@@ -269,9 +269,10 @@ components:
           $ref: '#/components/schemas/Coordinates'
         creationDate:
           type: string
-          format: date-time
+          format: date
           description: Дата создания записи, генерируется автоматически
           readOnly: true
+          example: '2026-09-23'
         oscarsCount:
           type: integer
           format: int32
@@ -340,7 +341,9 @@ components:
             $ref: '#/components/schemas/MovieFilter'
         sort:
           type: string
-          description: Поля сортировки с направлением через запятую, как в GET /movies
+          description: |
+            Поля сортировки с направлением через запятую, направление задаётся
+            суффиксом `:asc` или `:desc` (по умолчанию `asc`)
           example: name:asc,oscarsCount:desc
         page:
           type: integer
@@ -353,6 +356,19 @@ components:
           maximum: 100
           default: 20
           description: Размер страницы
+      example:
+        filters:
+          - path: genre
+            value: DRAMA
+          - path: oscarsCount
+            value: '3'
+            comparator: gt
+          - path: director.name
+            value: Nolan
+            comparator: substring
+        sort: oscarsCount:desc
+        page: 0
+        size: 20
     MovieFilter:
       type: object
       description: Одно условие фильтрации
@@ -410,9 +426,10 @@ components:
           minLength: 1
         birthday:
           type: string
-          format: date-time
+          format: date
           description: Дата рождения, может быть null
           nullable: true
+          example: '1970-07-30'
         eyeColor:
           $ref: '#/components/schemas/EyeColor'
         hairColor:
