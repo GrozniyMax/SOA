@@ -111,8 +111,8 @@ public final class MovieSpecifications {
 
     private static Object parseValue(MovieFieldPath fieldPath, String value) {
         return switch (fieldPath) {
-            case ID, OSCARS_COUNT -> Long.parseLong(value);
-            case COORDINATES_X -> Integer.parseInt(value);
+            case ID -> Long.parseLong(value);
+            case OSCARS_COUNT, COORDINATES_X -> Integer.parseInt(value);
             case COORDINATES_Y, TOTAL_BOX_OFFICE -> Float.parseFloat(value);
             case CREATION_DATE, DIRECTOR_BIRTHDAY -> LocalDate.parse(value);
             case GENRE -> MovieGenre.valueOf(value);
