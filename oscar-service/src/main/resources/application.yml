@@ -5,9 +5,15 @@ spring:
     url: ${OSCAR_DB_URL:jdbc:postgresql://localhost:5432/oscar}
     username: ${OSCAR_DB_USERNAME:oscar}
     password: ${OSCAR_DB_PASSWORD:oscar}
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    open-in-view: false
 
 server:
   port: 8081
+  servlet:
+    context-path: /oscar
 
 # Базовый URL первого сервиса (movie-service) для межсервисного вызова.
 movie:
