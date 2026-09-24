@@ -5,6 +5,10 @@ spring:
     url: ${MOVIE_DB_URL:jdbc:postgresql://localhost:5432/movie}
     username: ${MOVIE_DB_USERNAME:movie}
     password: ${MOVIE_DB_PASSWORD:movie}
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    open-in-view: false
 
 server:
   port: 8080

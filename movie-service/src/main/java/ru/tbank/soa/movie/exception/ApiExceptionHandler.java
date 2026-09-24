@@ -8,6 +8,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingPathVariableException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -66,6 +67,11 @@ public class ApiExceptionHandler {
     @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
     public ResponseEntity<ApiError> handleNotAcceptable(HttpMediaTypeNotAcceptableException e) {
         return build(HttpStatus.NOT_ACCEPTABLE, e.getMessage());
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiError> handleMethodNotAllowed(HttpRequestMethodNotSupportedException e) {
+        return build(HttpStatus.METHOD_NOT_ALLOWED, e.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
