@@ -18,6 +18,9 @@ import ru.tbank.soa.movie.domain.PageResult;
 import ru.tbank.soa.movie.domain.Person;
 import ru.tbank.soa.movie.repository.dao.JpaMovieDao;
 import ru.tbank.soa.movie.repository.dao.MovieDao;
+import ru.tbank.soa.movie.repository.entity.CoordinatesEntity;
+import ru.tbank.soa.movie.repository.jpa.CoordinatesJpaRepository;
+import ru.tbank.soa.movie.repository.jpa.PersonJpaRepository;
 import ru.tbank.soa.movie.repository.mapper.MovieEntityMapperImpl;
 
 import java.time.LocalDate;
@@ -37,6 +40,12 @@ class JpaMovieDaoTest {
 
     @Autowired
     private MovieDao dao;
+
+    @Autowired
+    private CoordinatesJpaRepository coordinatesRepository;
+
+    @Autowired
+    private PersonJpaRepository personRepository;
 
     private static Movie movie(String name, String tagline, MovieGenre genre, String directorName) {
         return new Movie(
@@ -175,5 +184,38 @@ class JpaMovieDaoTest {
 
         assertThat(genres.total()).isEqualTo(3);
         assertThat(genres.items()).hasSize(2);
+    }
+
+    @Test
+    void coordinatesAreReusedAndDeletedWhenRefCountReachesZero() {
+        long initialCount = coordinatesRepository.count();
+
+        Movie a = dao.save(movie("A", "t", MovieGenre.ACTION, "Shared"));
+        Movie b = dao.save(movie("B", "t", MovieGenre.DRAMA, "Shared"));
+
+        // Оба фильма используют одни и те же координаты (1, 2.5) — одна строка, refCount=2.
+        assertThat(coordinatesRepository.count()).isEqualTo(initialCount + 1);
+        Optional<CoordinatesEntity> coords = coordinatesRepository.findByXAndY(1, 2.5f);
+        assertThat(coords).isPresent();
+        assertThat(coords.orElseThrow().getRefCount()).isEqualTo(2);
+
+        dao.deleteById(a.id());
+        assertThat(coordinatesRepository.findByXAndY(1, 2.5f))
+                .get()
+                .extracting(CoordinatesEntity::getRefCount)
+                .isEqualTo(1);
+
+        dao.deleteById(b.id());
+        assertThat(coordinatesRepository.findByXAndY(1, 2.5f)).isEmpty();
+        assertThat(coordinatesRepository.count()).isEqualTo(initialCount);
+    }
+
+    @Test
+    void directorIsReusedAcrossMovies() {
+        dao.save(movie("A", "t", MovieGenre.ACTION, "Nolan"));
+        dao.save(movie("B", "t", MovieGenre.DRAMA, "Nolan"));
+
+        assertThat(personRepository.count()).isEqualTo(1);
+        assertThat(personRepository.findByName("Nolan")).isPresent();
     }
 }
