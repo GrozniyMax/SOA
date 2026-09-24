@@ -17,6 +17,7 @@ dependencies {
     runtimeOnly("com.h2database:h2")
     // Embedded Tomcat не попадает в WAR — сервис разворачивается на Payara.
     providedRuntime("org.springframework.boot:spring-boot-starter-tomcat")
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
 // Генерация API-интерфейса и DTO из OpenAPI-спецификации.
