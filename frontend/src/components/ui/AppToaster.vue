@@ -80,7 +80,8 @@ onBeforeUnmount(() => {
         <div class="toast-content">
           <p class="toast-title">{{ item.title }}</p>
           <p v-if="item.hint" class="toast-hint">{{ item.hint }}</p>
-          <template v-if="item.detail">
+          <p v-if="item.detail && item.type !== 'error'" class="toast-hint">{{ item.detail }}</p>
+          <template v-else-if="item.detail">
             <button type="button" class="toast-toggle" @click="toggle(item)">
               {{ expanded.has(item.id) ? 'Скрыть ответ сервиса' : 'Ответ сервиса' }}
             </button>

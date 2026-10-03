@@ -3,7 +3,7 @@ import type { Component } from 'vue'
 
 withDefaults(
   defineProps<{
-    variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
+    variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'danger-ghost'
     size?: 'md' | 'sm'
     type?: 'button' | 'submit' | 'reset'
     icon?: Component
@@ -144,6 +144,15 @@ withDefaults(
 .btn-danger:not(:disabled):hover {
   background: color-mix(in srgb, var(--danger) 88%, #000);
   box-shadow: 0 6px 16px color-mix(in srgb, var(--danger) 28%, transparent);
+}
+
+.btn-danger-ghost {
+  background: transparent;
+  color: var(--danger-text);
+}
+
+.btn-danger-ghost:not(:disabled):hover {
+  background: var(--danger-soft);
 }
 
 .btn-icon,
