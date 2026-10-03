@@ -2,6 +2,7 @@
 import { nextTick, onMounted, ref, watch, type Component } from 'vue'
 import { useRoute } from 'vue-router'
 import { IconAward, IconChartBar, IconMovie } from '@tabler/icons-vue'
+import AppLogo from '@/components/layout/AppLogo.vue'
 
 interface NavItem {
   to: string
@@ -49,10 +50,10 @@ watch(
 
 <template>
   <aside class="sidebar">
-    <div class="brand">
-      <span class="logo" aria-hidden="true" />
-      <span class="brand-name">SOA Movies</span>
-    </div>
+    <RouterLink to="/movies" class="brand">
+      <AppLogo />
+      <span class="brand-name">Movies</span>
+    </RouterLink>
     <nav ref="navRef" class="nav">
       <span
         class="pill"
@@ -96,19 +97,7 @@ watch(
   font-size: 15px;
   letter-spacing: -0.01em;
   white-space: nowrap;
-}
-
-.logo {
-  flex-shrink: 0;
-  width: 22px;
-  height: 22px;
-  border-radius: 7px;
-  background: var(--accent);
-  transition: transform var(--dur-slow) var(--ease-spring);
-}
-
-.brand:hover .logo {
-  transform: rotate(-12deg) scale(1.06);
+  color: var(--text);
 }
 
 .nav {

@@ -35,5 +35,5 @@ export const router = createRouter({
 
 router.afterEach((to) => {
   const title = typeof to.meta.title === 'string' ? to.meta.title : ''
-  document.title = title ? `${title} · SOA Movies` : 'SOA Movies'
+  document.title = title ? `${title} · Movies` : 'Movies'
 })
