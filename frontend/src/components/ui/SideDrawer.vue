@@ -140,6 +140,8 @@ watch(open, (value) => {
 
 .drawer-footer {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
   gap: 8px;
   padding: 14px 24px;

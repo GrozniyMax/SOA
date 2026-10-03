@@ -241,5 +241,10 @@ async function submit() {
   .grid {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .toggle {
+    flex-basis: 100%;
+    margin-bottom: 4px;
+  }
 }
 </style>
