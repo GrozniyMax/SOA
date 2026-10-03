@@ -13,6 +13,7 @@ export function useCountUp(source: Ref<number | null | undefined>, duration = 70
       display.value = to
       return
     }
+    display.value = from
     const start = performance.now()
     const step = (now: number) => {
       const t = Math.min(1, (now - start) / duration)
