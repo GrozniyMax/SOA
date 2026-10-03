@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppSidebar from '@/components/layout/AppSidebar.vue'
+import AppToaster from '@/components/ui/AppToaster.vue'
 </script>
 
 <template>
@@ -12,6 +13,7 @@ import AppSidebar from '@/components/layout/AppSidebar.vue'
         </Transition>
       </RouterView>
     </main>
+    <AppToaster />
   </div>
 </template>
 

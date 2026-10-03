@@ -25,6 +25,28 @@
   opacity: 0;
 }
 
+.chip-move,
+.chip-enter-active,
+.chip-leave-active {
+  transition:
+    transform var(--dur-slow) var(--ease),
+    opacity var(--dur) var(--ease);
+}
+
+.chip-enter-from {
+  opacity: 0;
+  transform: scale(0.85);
+}
+
+.chip-leave-to {
+  opacity: 0;
+  transform: scale(0.7);
+}
+
+.chip-leave-active {
+  position: absolute;
+}
+
 @keyframes rise-in {
   from {
     opacity: 0;
