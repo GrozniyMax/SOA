@@ -12,6 +12,7 @@ withDefaults(
     generation?: number
     clickable?: boolean
     sortable?: boolean
+    compact?: boolean
   }>(),
   {
     loading: false,
@@ -19,6 +20,7 @@ withDefaults(
     generation: 0,
     clickable: false,
     sortable: true,
+    compact: false,
   },
 )
 
@@ -29,8 +31,8 @@ const emit = defineEmits<{
 
 defineSlots<{ empty?: () => unknown }>()
 
-function columns(sortable: boolean): TableColumn<Movie>[] {
-  return [
+function columns(sortable: boolean, compact: boolean): TableColumn<Movie>[] {
+  const all: TableColumn<Movie>[] = [
     { key: 'id', label: 'ID', width: '72px', align: 'right', sortable, muted: true },
     { key: 'name', label: 'Название', sortable },
     { key: 'genre', label: 'Жанр', width: '150px', sortable },
@@ -39,19 +41,20 @@ function columns(sortable: boolean): TableColumn<Movie>[] {
     { key: 'totalBoxOffice', label: 'Сборы', width: '150px', align: 'right', sortable, value: (m) => formatMoney(m.totalBoxOffice) },
     { key: 'creationDate', label: 'Создан', width: '120px', align: 'right', sortable, value: (m) => formatDate(m.creationDate) },
   ]
+  return compact ? all.filter((c) => c.key !== 'creationDate') : all
 }
 </script>
 
 <template>
   <DataTable
-    :columns="columns(sortable)"
+    :columns="columns(sortable, compact)"
     :rows="movies"
     :row-key="(m) => m.id"
     :loading="loading"
     :sort="sort"
     :generation="generation"
     :clickable="clickable"
-    min-width="1040px"
+    :min-width="compact ? '880px' : '1040px'"
     @sort="(key, additive) => emit('sort', key, additive)"
     @row-click="(m) => emit('open', m)"
   >
