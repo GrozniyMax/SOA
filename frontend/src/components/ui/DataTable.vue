@@ -28,8 +28,10 @@ const props = withDefaults(
     clickable?: boolean
     skeletonRows?: number
     generation?: number
+    minWidth?: string
   }>(),
   {
+    minWidth: '720px',
     loading: false,
     sort: () => [],
     clickable: false,
@@ -79,7 +81,7 @@ function cellText(column: TableColumn<T>, row: T): string {
 <template>
   <div class="table-card" :class="{ busy: loading && rows.length > 0 }">
     <div class="table-scroll">
-      <table>
+      <table :style="{ minWidth }">
         <colgroup>
           <col v-for="column in columns" :key="column.key" :style="column.width ? { width: column.width } : undefined" />
           <col v-if="clickable" style="width: 36px" />
@@ -173,7 +175,6 @@ table {
   border-collapse: separate;
   border-spacing: 0;
   table-layout: fixed;
-  min-width: 720px;
 }
 
 th {

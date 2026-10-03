@@ -23,7 +23,12 @@ const showDetail = ref(false)
 const view = computed(() => {
   const err = props.error
   if (err instanceof ApiException) {
-    return { title: err.message, detail: err.serverMessage, hint: networkHint(err), status: err.status }
+    return {
+      title: err.message,
+      detail: err.serverMessage,
+      hint: networkHint(err),
+      status: err.kind === 'http' ? err.status : null,
+    }
   }
   return {
     title: 'Что-то пошло не так',
