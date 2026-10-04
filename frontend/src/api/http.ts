@@ -10,8 +10,8 @@ const SERVICE_TITLES: Record<ServiceName, string> = {
 }
 
 const BASE_URLS: Record<ServiceName, string> = {
-  movie: import.meta.env.VITE_MOVIE_API.replace(/\/+$/, ''),
-  oscar: import.meta.env.VITE_OSCAR_API.replace(/\/+$/, ''),
+  movie: (import.meta.env.VITE_MOVIE_API || '/api/movie').replace(/\/+$/, ''),
+  oscar: (import.meta.env.VITE_OSCAR_API || '/api/oscar').replace(/\/+$/, ''),
 }
 
 const DEFAULT_TIMEOUT_MS = 15000
