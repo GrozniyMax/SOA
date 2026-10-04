@@ -65,7 +65,6 @@ function open(movie: Movie) {
     title="Режиссёр больше заданного"
     description="Фильмы, у которых имя режиссёра больше введённого значения (сравнение строк по алфавиту)"
     :icon="IconSortAscendingLetters"
-    endpoint="GET /movies/by-directors-greater-than"
   >
     <form class="query-form" @submit.prevent="submit">
       <FormField label="Имя режиссёра" for-id="dg-director" :error="inputError" class="query-field">

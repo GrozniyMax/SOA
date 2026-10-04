@@ -6,12 +6,10 @@ withDefaults(
     title: string
     description?: string
     icon?: Component
-    endpoint?: string
   }>(),
   {
     description: undefined,
     icon: undefined,
-    endpoint: undefined,
   },
 )
 </script>
@@ -25,7 +23,6 @@ withDefaults(
       <div class="section-titles">
         <h2>{{ title }}</h2>
         <p v-if="description" class="secondary">{{ description }}</p>
-        <code v-if="endpoint" class="endpoint">{{ endpoint }}</code>
       </div>
       <div v-if="$slots.actions" class="section-actions">
         <slot name="actions" />
@@ -85,14 +82,6 @@ withDefaults(
 .section-titles p {
   margin-top: 2px;
   font-size: 13px;
-}
-
-.endpoint {
-  display: inline-block;
-  margin-top: 6px;
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 11.5px;
 }
 
 .section-actions {

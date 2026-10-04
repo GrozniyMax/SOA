@@ -43,7 +43,6 @@ defineExpose({ reload: query.reload })
     title="Операторы без Оскаров"
     description="Операторы, ни один фильм которых не получил ни одного Оскара"
     :icon="IconTrophyOff"
-    endpoint="GET /oscar/operators/losers"
   >
     <template #actions>
       <BaseButton size="sm" variant="ghost" icon-only :icon="IconRefresh" label="Обновить" :loading="query.loading.value" @click="query.reload" />

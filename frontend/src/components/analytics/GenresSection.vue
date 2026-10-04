@@ -48,7 +48,6 @@ const summary = computed(() => {
     title="Жанры коллекции"
     description="Уникальные значения поля genre по всем фильмам"
     :icon="IconCategory"
-    endpoint="GET /movies/genres"
   >
     <template #actions>
       <BaseButton size="sm" variant="ghost" icon-only :icon="IconRefresh" label="Обновить" :loading="query.loading.value" @click="query.reload" />

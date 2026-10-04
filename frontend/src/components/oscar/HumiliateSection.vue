@@ -70,7 +70,6 @@ async function run() {
     title="Отобрать Оскары по жанру"
     description="Отбирает все Оскары у фильмов режиссёров, снявших хотя бы один фильм в выбранном жанре"
     :icon="IconFlame"
-    endpoint="POST /oscar/directors/by-genre/{genre}/humiliate"
   >
     <div class="body">
       <div class="genres" role="radiogroup" aria-label="Жанр">

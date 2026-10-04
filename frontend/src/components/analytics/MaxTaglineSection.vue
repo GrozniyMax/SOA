@@ -25,7 +25,6 @@ const movie = computed(() => query.data.value)
     title="Максимальный слоган"
     description="Фильм с максимальным значением tagline при сравнении строк"
     :icon="IconSortDescendingLetters"
-    endpoint="GET /movies/by-max-tagline"
   >
     <template #actions>
       <BaseButton size="sm" variant="ghost" icon-only :icon="IconRefresh" label="Обновить" :loading="query.loading.value" @click="query.reload" />
