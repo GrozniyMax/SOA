@@ -1,7 +1,6 @@
 import type { EyeColor, HairColor, Movie, MovieGenre, MovieRequest } from '@/api/types'
 
 export const TAGLINE_MAX = 181
-const INT32_MAX = 2147483647
 
 export interface MovieFormModel {
   name: string
@@ -57,47 +56,7 @@ export function formFromMovie(movie: Movie): MovieFormModel {
   }
 }
 
-const INT_RE = /^-?\d+$/
 const FLOAT_RE = /^-?\d+([.,]\d+)?$/
-
-function toNumber(raw: string): number {
-  return Number(raw.trim().replace(',', '.'))
-}
-
-export function validateMovieForm(form: MovieFormModel): MovieFormErrors {
-  const errors: MovieFormErrors = {}
-
-  if (!form.name.trim()) errors.name = 'Введите название'
-  if (!form.genre) errors.genre = 'Выберите жанр'
-
-  const oscars = form.oscarsCount.trim()
-  if (oscars) {
-    if (!INT_RE.test(oscars)) errors.oscarsCount = 'Нужно целое число'
-    else if (toNumber(oscars) < 1) errors.oscarsCount = 'Должно быть больше 0'
-    else if (toNumber(oscars) > INT32_MAX) errors.oscarsCount = 'Слишком большое число'
-  }
-
-  const box = form.totalBoxOffice.trim()
-  if (box) {
-    if (!FLOAT_RE.test(box)) errors.totalBoxOffice = 'Нужно число, например 1250.5'
-    else if (toNumber(box) <= 0) errors.totalBoxOffice = 'Должно быть больше 0'
-  }
-
-  if (form.tagline.length > TAGLINE_MAX) errors.tagline = `Не длиннее ${TAGLINE_MAX} символов`
-
-  const x = form.x.trim()
-  if (!x) errors.x = 'Обязательное поле'
-  else if (!INT_RE.test(x)) errors.x = 'Нужно целое число'
-  else if (Math.abs(toNumber(x)) > INT32_MAX) errors.x = 'Слишком большое число'
-
-  const y = form.y.trim()
-  if (!y) errors.y = 'Обязательное поле'
-  else if (!FLOAT_RE.test(y)) errors.y = 'Нужно число, например 12.5'
-
-  if (!form.directorName.trim()) errors.directorName = 'Введите имя режиссёра'
-
-  return errors
-}
 
 function looseNumber(raw: string): number | string | null {
   const value = raw.trim()

@@ -9,7 +9,6 @@ import BaseSelect from '@/components/ui/BaseSelect.vue'
 import ErrorState from '@/components/ui/ErrorState.vue'
 import FormField from '@/components/ui/FormField.vue'
 import SideDrawer from '@/components/ui/SideDrawer.vue'
-import ToggleSwitch from '@/components/ui/ToggleSwitch.vue'
 import { useToast } from '@/composables/useToast'
 import { EYE_COLOR_LABELS, GENRE_LABELS, HAIR_COLOR_LABELS } from '@/domain/labels'
 import {
@@ -18,7 +17,6 @@ import {
   formFromMovie,
   mapServerErrors,
   toMovieRequest,
-  validateMovieForm,
   type MovieFormErrors,
   type MovieFormModel,
 } from '@/domain/validation'
@@ -38,7 +36,6 @@ const form = ref<MovieFormModel>(emptyForm())
 const errors = ref<MovieFormErrors>({})
 const serverError = ref<unknown>(null)
 const saving = ref(false)
-const clientValidation = ref(true)
 
 const isEdit = computed(() => props.movie !== null)
 const title = computed(() => (isEdit.value ? 'Редактирование' : 'Новый фильм'))
@@ -69,14 +66,7 @@ function clearError(field: keyof MovieFormModel) {
 
 async function submit() {
   serverError.value = null
-  if (clientValidation.value) {
-    const found = validateMovieForm(form.value)
-    errors.value = found
-    if (Object.keys(found).length > 0) return
-  } else {
-    errors.value = {}
-  }
-
+  errors.value = {}
   saving.value = true
   try {
     const body = toMovieRequest(form.value)
@@ -196,7 +186,6 @@ async function submit() {
     </form>
 
     <template #footer>
-      <ToggleSwitch v-model="clientValidation" label="Проверка в браузере" hint="Выключите, чтобы проверял сервер" class="toggle" />
       <BaseButton variant="ghost" :disabled="saving" @click="open = false">Отмена</BaseButton>
       <BaseButton variant="primary" type="submit" form="movie-form" :loading="saving">
         {{ isEdit ? 'Сохранить' : 'Добавить' }}
@@ -233,18 +222,9 @@ async function submit() {
   align-items: start;
 }
 
-.toggle {
-  margin-right: auto;
-}
-
 @media (max-width: 520px) {
   .grid {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .toggle {
-    flex-basis: 100%;
-    margin-bottom: 4px;
   }
 }
 </style>
