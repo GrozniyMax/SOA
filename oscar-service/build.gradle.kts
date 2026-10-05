@@ -1,16 +1,16 @@
-// oscar-service: standalone JAR с embedded Tomcat; вызывает REST API movie-service.
+import org.springframework.boot.gradle.tasks.bundling.BootWar
+
 plugins {
+    war
     id("org.openapi.generator") version "7.10.0"
 }
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
-    // WebClient для вызова API первого сервиса (movie-service).
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.mapstruct:mapstruct:1.6.3")
-    // Lombok ДО MapStruct, чтобы MapStruct видел сгенерированные сеттеры.
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
     annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
@@ -18,10 +18,10 @@ dependencies {
     testAnnotationProcessor("org.projectlombok:lombok")
     runtimeOnly("org.postgresql:postgresql")
     runtimeOnly("com.h2database:h2")
+    providedRuntime("org.springframework.boot:spring-boot-starter-tomcat")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
-// Генерация API-интерфейсов и DTO из OpenAPI-спецификации.
 openApiGenerate {
     generatorName.set("spring")
     inputSpec.set("$rootDir/openapi/oscar-service.yaml")
@@ -59,4 +59,8 @@ sourceSets {
 
 tasks.named("compileJava") {
     dependsOn("openApiGenerate")
+}
+
+tasks.named<BootWar>("bootWar") {
+    archiveFileName.set("oscar.war")
 }

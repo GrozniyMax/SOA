@@ -11,8 +11,8 @@
 
 | Модуль | Назначение | Упаковка | Порт |
 |--------|-----------|----------|------|
-| `movie-service` | CRUD + поиск/сортировка/пагинация коллекции `Movie` | **WAR** (Payara / Payara Micro) | 8080 |
-| `oscar-service` | Операции с «Оскарами»; вызывает REST API movie-service | **JAR** (embedded Tomcat) | 8081, context-path `/oscar` |
+| `movie-service` | CRUD + поиск/сортировка/пагинация коллекции `Movie` | **WAR** `movie-service.war` (Payara Server 6) | 8080, context-path `/movie-service` |
+| `oscar-service` | Операции с «Оскарами»; вызывает REST API movie-service | **WAR** `oscar.war` (Tomcat 10.1) | 8081, context-path `/oscar` |
 
 ### Стек
 
@@ -79,7 +79,7 @@ exception/    # глобальный @RestControllerAdvice → ApiError
 |-----------|-----|--------------|
 | `MOVIE_DB_URL` / `MOVIE_DB_USERNAME` / `MOVIE_DB_PASSWORD` | movie-service | `jdbc:postgresql://localhost:5432/movie` |
 | `OSCAR_DB_URL` / `OSCAR_DB_USERNAME` / `OSCAR_DB_PASSWORD` | oscar-service | `jdbc:postgresql://localhost:5432/oscar` |
-| `MOVIE_SERVICE_URL` | oscar-service | `http://localhost:8080` |
+| `MOVIE_SERVICE_URL` | oscar-service | `http://localhost:8080` (в контейнерах — `http://movie:8080/movie-service`) |
 | `JPA_DDL_AUTO` | оба | `update` |
 
 ## Сборка и запуск
@@ -94,15 +94,33 @@ exception/    # глобальный @RestControllerAdvice → ApiError
 # movie-service — как WAR на Payara Micro (скачивает payara-micro.jar и деплоит)
 ./gradlew :movie-service:runPayara
 
-# movie-service — WAR для внешнего Payara
+# movie-service — WAR для Payara (build/libs/movie-service.war)
 ./gradlew :movie-service:bootWar
 
 # oscar-service — локально (dev, H2; использует MOVIE_SERVICE_URL)
 ./gradlew :oscar-service:bootRun --args='--spring.profiles.active=dev'
 
-# oscar-service — исполняемый JAR
-./gradlew :oscar-service:bootJar
+# oscar-service — WAR для Tomcat (build/libs/oscar.war)
+./gradlew :oscar-service:bootWar
 ```
+
+## Развёртывание в контейнерах
+
+`deploy/docker-compose.yml` поднимает Postgres, movie-service на Payara Server 6.2025.4 (JDK 21)
+и oscar-service на Tomcat 10.1 (JDK 21). Перед запуском собираются оба WAR:
+
+```bash
+./gradlew :movie-service:bootWar :oscar-service:bootWar
+cp deploy/.env.example deploy/.env
+docker compose -f deploy/docker-compose.yml up -d --build
+```
+
+Порты на хосте задаются в `deploy/.env` (`MOVIE_PORT`, `OSCAR_PORT`), пароль БД — `DB_PASSWORD`.
+
+Особенности Payara:
+- нужен образ с JDK 21 (`-jdk21`): образ по умолчанию работает на Java 11, а сервис собран под 21;
+- в WAR лежит `WEB-INF/beans.xml` (`bean-discovery-mode="annotated"`): Payara подключает к каждому
+  приложению JSF-листенер, которому нужен CDI, и без `beans.xml` деплой падает с `CDI is not available`.
 
 Запуск oscar-service с полноценным humiliate требует поднятого movie-service.
 Данные операторов/оскаров в oscar-service сидируются автоматически при пустых таблицах.

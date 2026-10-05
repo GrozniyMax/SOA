@@ -1,4 +1,3 @@
-// movie-service: WAR для развёртывания на Payara (Payara Micro для локального запуска).
 import java.net.URI
 import org.springframework.boot.gradle.tasks.bundling.BootWar
 
@@ -12,7 +11,6 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.mapstruct:mapstruct:1.6.3")
-    // Lombok должен обрабатываться раньше MapStruct, чтобы MapStruct видел сгенерированные сеттеры.
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
     annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
@@ -20,12 +18,10 @@ dependencies {
     testAnnotationProcessor("org.projectlombok:lombok")
     runtimeOnly("org.postgresql:postgresql")
     runtimeOnly("com.h2database:h2")
-    // Embedded Tomcat не попадает в WAR — сервис разворачивается на Payara.
     providedRuntime("org.springframework.boot:spring-boot-starter-tomcat")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
-// Генерация API-интерфейса и DTO из OpenAPI-спецификации.
 openApiGenerate {
     generatorName.set("spring")
     inputSpec.set("$rootDir/openapi/movie-service.yaml")
@@ -45,8 +41,6 @@ openApiGenerate {
         "documentationProvider" to "none",
         "library" to "spring-boot"
     ))
-    // Базовый `Page` объявляет `items` без типа элемента (типизируется через allOf).
-    // Строгая валидация спецификации ошибочно считает это ошибкой, поэтому отключаем её.
     validateSpec.set(false)
     skipValidateSpec.set(true)
     typeMappings.set(mapOf(
@@ -67,7 +61,10 @@ tasks.named("compileJava") {
     dependsOn("openApiGenerate")
 }
 
-// Версия Payara Micro, которой запускается собранный WAR локально.
+tasks.named<BootWar>("bootWar") {
+    archiveFileName.set("movie-service.war")
+}
+
 val payaraMicroVersion = "6.2025.4"
 val payaraMicroJar = layout.buildDirectory.file("libs/payara-micro.jar")
 
