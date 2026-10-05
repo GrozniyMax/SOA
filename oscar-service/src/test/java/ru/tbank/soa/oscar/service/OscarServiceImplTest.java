@@ -2,8 +2,8 @@ package ru.tbank.soa.oscar.service;
 
 import org.junit.jupiter.api.Test;
 import ru.tbank.soa.oscar.client.MovieServiceClient;
-import ru.tbank.soa.oscar.domain.Award;
 import ru.tbank.soa.oscar.domain.HumiliationResult;
+import ru.tbank.soa.oscar.domain.Movie;
 import ru.tbank.soa.oscar.domain.MovieGenre;
 import ru.tbank.soa.oscar.domain.Operator;
 import ru.tbank.soa.oscar.domain.PageResult;
@@ -15,6 +15,9 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -27,74 +30,58 @@ class OscarServiceImplTest {
     private final OscarServiceImpl service = new OscarServiceImpl(dao, client);
 
     @Test
-    void getLosersDelegatesToDao() {
+    void getLosersPassesAwardedMovieIdsToDao() {
         PageResult<Operator> expected = new PageResult<>(List.of(new Operator(1L, "Deakins")), 1, 0, 10);
-        when(dao.findLosers(0, 10)).thenReturn(expected);
+        when(client.findAwardedMovieIds()).thenReturn(Set.of(3L, 4L));
+        when(dao.findLosers(Set.of(3L, 4L), 0, 10)).thenReturn(expected);
 
         PageResult<Operator> result = service.getLosers(0, 10);
 
         assertThat(result).isSameAs(expected);
-        verify(dao).findLosers(0, 10);
     }
 
     @Test
-    void humiliateWithNoDirectorsReturnsZeroAndNoRevoke() {
+    void getLosersPropagatesMovieServiceErrors() {
+        when(client.findAwardedMovieIds()).thenThrow(new MovieServiceUnavailableException("down"));
+
+        assertThatThrownBy(() -> service.getLosers(0, 10))
+                .isInstanceOf(MovieServiceUnavailableException.class);
+        verify(dao, never()).findLosers(anyCollection(), anyInt(), anyInt());
+    }
+
+    @Test
+    void humiliateWithNoDirectorsRevokesNothing() {
         when(client.findDirectorsByGenre(MovieGenre.FANTASY)).thenReturn(Set.of());
-        when(dao.findAwardsByDirectorIn(Set.of())).thenReturn(List.of());
 
         HumiliationResult result = service.humiliateDirectorsByGenre(MovieGenre.FANTASY);
 
-        assertThat(result.genre()).isEqualTo(MovieGenre.FANTASY);
-        assertThat(result.affectedDirectors()).isZero();
-        assertThat(result.revokedOscars()).isZero();
-        verify(dao, never()).revokeOscars(org.mockito.ArgumentMatchers.anyList());
+        assertThat(result).isEqualTo(new HumiliationResult(MovieGenre.FANTASY, 0, 0));
+        verify(client, never()).revokeOscars(anyLong());
     }
 
     @Test
-    void humiliateWithDirectorsRevokesPositiveAwards() {
-        when(client.findDirectorsByGenre(MovieGenre.ACTION))
-                .thenReturn(Set.of("Christopher Nolan", "Some Director"));
-
-        when(dao.findAwardsByDirectorIn(Set.of("Christopher Nolan", "Some Director"))).thenReturn(List.of(
-                new Award(1L, 1L, 2, MovieGenre.ACTION, "Christopher Nolan"),
-                new Award(2L, 2L, 0, MovieGenre.DRAMA, "Christopher Nolan"),
-                new Award(3L, 3L, 1, MovieGenre.ACTION, "Some Director")
-        ));
+    void humiliateRevokesAllAwardedMoviesOfDirectors() {
+        when(client.findDirectorsByGenre(MovieGenre.ACTION)).thenReturn(Set.of("Nolan", "Villeneuve", "Nobody"));
+        when(client.findAwardedMoviesByDirector("Nolan")).thenReturn(List.of(new Movie(1L, 2), new Movie(2L, 3)));
+        when(client.findAwardedMoviesByDirector("Villeneuve")).thenReturn(List.of(new Movie(5L, 1)));
+        when(client.findAwardedMoviesByDirector("Nobody")).thenReturn(List.of());
 
         HumiliationResult result = service.humiliateDirectorsByGenre(MovieGenre.ACTION);
 
-        assertThat(result.genre()).isEqualTo(MovieGenre.ACTION);
-        // Затронуты режиссёры только у записей с oscarsCount > 0: Nolan и Some Director.
-        assertThat(result.affectedDirectors()).isEqualTo(2);
-        assertThat(result.revokedOscars()).isEqualTo(3);
-        verify(dao).revokeOscars(List.of(1L, 3L));
+        assertThat(result).isEqualTo(new HumiliationResult(MovieGenre.ACTION, 2, 6));
+        verify(client).revokeOscars(1L);
+        verify(client).revokeOscars(2L);
+        verify(client).revokeOscars(5L);
     }
 
     @Test
-    void humiliateOnlyCountsDistinctAffectedDirectors() {
-        when(client.findDirectorsByGenre(MovieGenre.ACTION)).thenReturn(Set.of("Nolan"));
-        when(dao.findAwardsByDirectorIn(Set.of("Nolan"))).thenReturn(List.of(
-                new Award(1L, 1L, 2, MovieGenre.ACTION, "Nolan"),
-                new Award(2L, 2L, 3, MovieGenre.ACTION, "Nolan")
-        ));
-
-        HumiliationResult result = service.humiliateDirectorsByGenre(MovieGenre.ACTION);
-
-        assertThat(result.affectedDirectors()).isEqualTo(1);
-        assertThat(result.revokedOscars()).isEqualTo(5);
-        verify(dao).revokeOscars(List.of(1L, 2L));
-    }
-
-    @Test
-    void humiliatePropagatesMovieServiceUnavailableException() {
+    void humiliatePropagatesMovieServiceErrors() {
         when(client.findDirectorsByGenre(MovieGenre.DRAMA))
                 .thenThrow(new MovieServiceUnavailableException("movie-service down"));
 
         assertThatThrownBy(() -> service.humiliateDirectorsByGenre(MovieGenre.DRAMA))
                 .isInstanceOf(MovieServiceUnavailableException.class)
                 .hasMessage("movie-service down");
-
-        verify(dao, never()).findAwardsByDirectorIn(org.mockito.ArgumentMatchers.anyCollection());
-        verify(dao, never()).revokeOscars(org.mockito.ArgumentMatchers.anyList());
+        verify(client, never()).revokeOscars(anyLong());
     }
 }

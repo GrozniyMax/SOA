@@ -5,21 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import ru.tbank.soa.oscar.domain.MovieGenre;
-import ru.tbank.soa.oscar.repository.entity.AwardEntity;
 import ru.tbank.soa.oscar.repository.entity.OperatorEntity;
 import ru.tbank.soa.oscar.repository.entity.OperatorFilmEntity;
-import ru.tbank.soa.oscar.repository.jpa.AwardJpaRepository;
 import ru.tbank.soa.oscar.repository.jpa.OperatorFilmJpaRepository;
 import ru.tbank.soa.oscar.repository.jpa.OperatorJpaRepository;
 
-import java.util.List;
-
-/**
- * Сидер начальных данных. Заполняет базу только если она пуста.
- * Данные внутренне согласованы: OperatorFilm.filmId ↔ Award.filmId,
- * а имена режиссёров в Award совпадают с режиссёрами в movie-service.
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -27,7 +17,6 @@ public class DataSeeder implements CommandLineRunner {
 
     private final OperatorJpaRepository operatorRepository;
     private final OperatorFilmJpaRepository operatorFilmRepository;
-    private final AwardJpaRepository awardRepository;
 
     @Override
     @Transactional
@@ -46,13 +35,8 @@ public class DataSeeder implements CommandLineRunner {
         operatorFilm(op2, 3L);
         operatorFilm(op3, 4L);
 
-        award(1L, 2, MovieGenre.ACTION, "Christopher Nolan");
-        award(2L, 0, MovieGenre.DRAMA, "Christopher Nolan");
-        award(3L, 1, MovieGenre.ACTION, "Some Director");
-        award(4L, 0, MovieGenre.FANTASY, "Another");
-
-        log.info("Seeded {} operators, {} operator-films, {} awards",
-                operatorRepository.count(), operatorFilmRepository.count(), awardRepository.count());
+        log.info("Seeded {} operators, {} operator-films",
+                operatorRepository.count(), operatorFilmRepository.count());
     }
 
     private OperatorEntity operator(String name) {
@@ -66,14 +50,5 @@ public class DataSeeder implements CommandLineRunner {
         e.setOperator(operator);
         e.setFilmId(filmId);
         return operatorFilmRepository.save(e);
-    }
-
-    private AwardEntity award(long filmId, int oscarsCount, MovieGenre genre, String director) {
-        AwardEntity e = new AwardEntity();
-        e.setFilmId(filmId);
-        e.setOscarsCount(oscarsCount);
-        e.setGenre(genre);
-        e.setDirector(director);
-        return awardRepository.save(e);
     }
 }
