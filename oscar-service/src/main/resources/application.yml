@@ -19,3 +19,8 @@ server:
 movie:
   service:
     url: ${MOVIE_SERVICE_URL:http://localhost:8080}
+    truststore: ${MOVIE_SERVICE_TRUSTSTORE:}
+    truststore-password: ${MOVIE_SERVICE_TRUSTSTORE_PASSWORD:}
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:}

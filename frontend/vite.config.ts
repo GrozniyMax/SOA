@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
@@ -6,6 +7,10 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const movieTarget = env.MOVIE_PROXY_TARGET ?? 'http://localhost:8080'
   const oscarTarget = env.OSCAR_PROXY_TARGET ?? 'http://localhost:8081'
+  const https =
+    env.HTTPS_CERT && env.HTTPS_KEY
+      ? { cert: readFileSync(env.HTTPS_CERT), key: readFileSync(env.HTTPS_KEY) }
+      : undefined
 
   return {
     base: './',
@@ -31,6 +36,10 @@ export default defineConfig(({ mode }) => {
           rewrite: (path) => path.replace(/^\/api\/oscar/, '/oscar'),
         },
       },
+    },
+    preview: {
+      port: 4173,
+      https,
     },
   }
 })

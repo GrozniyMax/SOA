@@ -79,7 +79,9 @@ exception/    # глобальный @RestControllerAdvice → ApiError
 |-----------|-----|--------------|
 | `MOVIE_DB_URL` / `MOVIE_DB_USERNAME` / `MOVIE_DB_PASSWORD` | movie-service | `jdbc:postgresql://localhost:5432/movie` |
 | `OSCAR_DB_URL` / `OSCAR_DB_USERNAME` / `OSCAR_DB_PASSWORD` | oscar-service | `jdbc:postgresql://localhost:5432/oscar` |
-| `MOVIE_SERVICE_URL` | oscar-service | `http://localhost:8080` (в контейнерах — `http://movie:8080/movie-service`) |
+| `MOVIE_SERVICE_URL` | oscar-service | `http://localhost:8080` (в контейнерах — `https://movie:8443/movie-service`) |
+| `MOVIE_SERVICE_TRUSTSTORE` / `MOVIE_SERVICE_TRUSTSTORE_PASSWORD` | oscar-service | не задан (WebClient доверяет только JDK cacerts) |
+| `CORS_ALLOWED_ORIGINS` | оба | не задан (CORS выключен) |
 | `JPA_DDL_AUTO` | оба | `update` |
 
 ## Сборка и запуск
@@ -110,12 +112,44 @@ exception/    # глобальный @RestControllerAdvice → ApiError
 и oscar-service на Tomcat 10.1 (JDK 21). Перед запуском собираются оба WAR:
 
 ```bash
+./deploy/gen-certs.sh
 ./gradlew :movie-service:bootWar :oscar-service:bootWar
 cp deploy/.env.example deploy/.env
 docker compose -f deploy/docker-compose.yml up -d --build
 ```
 
-Порты на хосте задаются в `deploy/.env` (`MOVIE_PORT`, `OSCAR_PORT`), пароль БД — `DB_PASSWORD`.
+`gen-certs.sh` создаёт в `deploy/certs/` (в gitignore) самоподписанные сертификаты: `movie.p12`, `oscar.p12`,
+`movie-truststore.p12` (сертификат movie-service для WebClient oscar-service) и `frontend.crt/.key`.
+Каталог монтируется в контейнеры как `/certs`; Payara импортирует `movie.p12` в keystore домена при старте.
+
+С сертификатом Let's Encrypt (на сервере с доменом):
+
+```bash
+certbot certonly --standalone -d 64-188-64-15.sslip.io
+DOMAIN=64-188-64-15.sslip.io ./deploy/gen-certs.sh
+```
+
+и в `deploy/.env`:
+
+```
+MOVIE_SERVICE_URL=https://64-188-64-15.sslip.io:8443/movie-service
+MOVIE_SERVICE_TRUSTSTORE=
+CORS_ALLOWED_ORIGINS=https://64-188-64-15.sslip.io:4173
+```
+
+Пустой `MOVIE_SERVICE_TRUSTSTORE` — WebClient доверяет стандартному cacerts JDK. После продления
+сертификата повторить `gen-certs.sh` и `docker compose restart movie oscar`.
+
+Оба сервиса доступны только по HTTPS: movie-service — `https://localhost:8443/movie-service`
+(у Payara выключен `http-listener-1`, `http-listener-2` переведён на 8443 с сертификатом `movie`),
+oscar-service — `https://localhost:8444/oscar` (в `deploy/tomcat/server.xml` только TLS-коннектор).
+
+Порты на хосте задаются в `deploy/.env` (`MOVIE_PORT`, `OSCAR_PORT`), пароль БД — `DB_PASSWORD`,
+пароль keystore — `KEYSTORE_PASSWORD`, адрес фронта для CORS — `CORS_ALLOWED_ORIGINS`.
+
+Фронт по HTTPS: `cp frontend/.env.production.example frontend/.env.production`, указать адреса API, затем
+`npm --prefix frontend run build && npm --prefix frontend run preview` → `https://localhost:4173`.
+В браузере нужно один раз открыть адреса обоих сервисов и принять самоподписанные сертификаты.
 
 Особенности Payara:
 - нужен образ с JDK 21 (`-jdk21`): образ по умолчанию работает на Java 11, а сервис собран под 21;

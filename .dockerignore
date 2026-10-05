@@ -1,3 +1,5 @@
 *
 !movie-service/build/libs/movie-service.war
 !oscar-service/build/libs/oscar.war
+!deploy/payara/
+!deploy/tomcat/
