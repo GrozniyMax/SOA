@@ -14,6 +14,7 @@ import ru.tbank.soa.movie.domain.Movie;
 import ru.tbank.soa.movie.domain.MovieGenre;
 import ru.tbank.soa.movie.domain.Person;
 import ru.tbank.soa.movie.service.MovieService;
+import ru.tbank.soa.movie.service.exception.InvalidSearchFilterException;
 import ru.tbank.soa.movie.service.exception.MovieNotFoundException;
 
 import java.time.LocalDate;
@@ -26,10 +27,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Web-слой тест контроллера: проверяет маппинг эндпоинтов, валидацию (@Valid → 422)
- * и глобальный обработчик исключений. Сервис замокан, маппер — реальный.
- */
 @WebMvcTest(MoviesApiController.class)
 @Import(MovieApiMapperImpl.class)
 class MoviesApiControllerTest {
@@ -77,5 +74,20 @@ class MoviesApiControllerTest {
         mockMvc.perform(get("/movies/99"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
+    }
+
+    @Test
+    void searchReturns400ForInvalidFilterValue() throws Exception {
+        when(service.searchMovies(any()))
+                .thenThrow(new InvalidSearchFilterException("invalid value 'abc' for filter oscarsCount"));
+
+        mockMvc.perform(post("/movies/search")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"filters":[{"path":"oscarsCount","value":"abc","comparator":"gt"}]}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("invalid value 'abc' for filter oscarsCount"));
     }
 }

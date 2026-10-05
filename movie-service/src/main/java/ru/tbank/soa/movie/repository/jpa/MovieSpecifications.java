@@ -1,41 +1,34 @@
 package ru.tbank.soa.movie.repository.jpa;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import ru.tbank.soa.movie.domain.EyeColor;
 import ru.tbank.soa.movie.domain.Filter;
 import ru.tbank.soa.movie.domain.FilterComparator;
-import ru.tbank.soa.movie.domain.HairColor;
 import ru.tbank.soa.movie.domain.MovieFieldPath;
-import ru.tbank.soa.movie.domain.MovieGenre;
 import ru.tbank.soa.movie.domain.MovieSearchCriteria;
 import ru.tbank.soa.movie.repository.entity.MovieEntity;
 
-import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 
-/**
- * Построение Criteria API-спецификаций ({@link Specification}) для динамического поиска фильмов
- * (POST /movies/search). Прячет детали JPA-мета-модели за доменными {@link MovieSearchCriteria}.
- */
 public final class MovieSpecifications {
 
     private static final int MAX_PAGE_SIZE = 100;
+    private static final char LIKE_ESCAPE = '\\';
 
     private MovieSpecifications() {
     }
 
-    /**
-     * Строит предикат AND по всем фильтрам критериев. Пустой список фильтров
-     * возвращает конъюнкцию (всегда истинный предикат) — матчатся все строки.
-     */
     public static Specification<MovieEntity> from(MovieSearchCriteria criteria) {
         if (criteria.filters() == null || criteria.filters().isEmpty()) {
             return (root, query, cb) -> cb.conjunction();
@@ -49,9 +42,6 @@ public final class MovieSpecifications {
         };
     }
 
-    /**
-     * Строит {@link Pageable} из критериев (page/size/sort).
-     */
     public static Pageable pageable(MovieSearchCriteria criteria) {
         int page = Math.max(criteria.page(), 0);
         int size = Math.min(Math.max(criteria.size(), 1), MAX_PAGE_SIZE);
@@ -59,12 +49,10 @@ public final class MovieSpecifications {
         return PageRequest.of(page, size, sort);
     }
 
-    private static Predicate toPredicate(jakarta.persistence.criteria.Root<MovieEntity> root,
-                                         jakarta.persistence.criteria.CriteriaBuilder cb,
-                                         Filter filter) {
+    private static Predicate toPredicate(Root<MovieEntity> root, CriteriaBuilder cb, Filter filter) {
         MovieFieldPath fieldPath = filter.path();
         Path<Object> attributePath = resolvePath(root, fieldPath.getPath());
-        Object parsedValue = parseValue(fieldPath, filter.value());
+        Object parsedValue = fieldPath.parse(filter.value());
         FilterComparator comparator = filter.comparator();
 
         switch (comparator) {
@@ -78,14 +66,23 @@ public final class MovieSpecifications {
                 return cb.lessThan(asComparable(attributePath), (Comparable) parsedValue);
             }
             case SUBSTRING -> {
-                if (isStringField(fieldPath)) {
-                    return cb.like(attributePath.as(String.class), "%" + filter.value() + "%");
+                if (fieldPath.isString()) {
+                    return cb.like(
+                            cb.lower(attributePath.as(String.class)),
+                            "%" + escapeLike(filter.value().toLowerCase(Locale.ROOT)) + "%",
+                            LIKE_ESCAPE);
                 }
-                // Для нестроковых полей SUBSTRING не имеет смысла — аккуратно сводим к равенству.
                 return cb.equal(attributePath, parsedValue);
             }
             default -> throw new IllegalArgumentException("Unsupported comparator: " + comparator);
         }
+    }
+
+    private static String escapeLike(String value) {
+        return value
+                .replace(String.valueOf(LIKE_ESCAPE), "" + LIKE_ESCAPE + LIKE_ESCAPE)
+                .replace("%", LIKE_ESCAPE + "%")
+                .replace("_", LIKE_ESCAPE + "_");
     }
 
     @SuppressWarnings("unchecked")
@@ -93,33 +90,13 @@ public final class MovieSpecifications {
         return (Expression<T>) expression;
     }
 
-    private static Path<Object> resolvePath(jakarta.persistence.criteria.Root<MovieEntity> root, String dotPath) {
-        Path<Object> path = root.get(dotPath.split("\\.")[0]);
+    private static Path<Object> resolvePath(Root<MovieEntity> root, String dotPath) {
         String[] segments = dotPath.split("\\.");
+        Path<Object> path = root.get(segments[0]);
         for (int i = 1; i < segments.length; i++) {
             path = path.get(segments[i]);
         }
         return path;
-    }
-
-    private static boolean isStringField(MovieFieldPath fieldPath) {
-        return switch (fieldPath) {
-            case NAME, TAGLINE, DIRECTOR_NAME -> true;
-            default -> false;
-        };
-    }
-
-    private static Object parseValue(MovieFieldPath fieldPath, String value) {
-        return switch (fieldPath) {
-            case ID -> Long.parseLong(value);
-            case OSCARS_COUNT, COORDINATES_X -> Integer.parseInt(value);
-            case COORDINATES_Y, TOTAL_BOX_OFFICE -> Float.parseFloat(value);
-            case CREATION_DATE, DIRECTOR_BIRTHDAY -> LocalDate.parse(value);
-            case GENRE -> MovieGenre.valueOf(value);
-            case DIRECTOR_EYE_COLOR -> EyeColor.valueOf(value);
-            case DIRECTOR_HAIR_COLOR -> HairColor.valueOf(value);
-            default -> value; // NAME, TAGLINE, DIRECTOR_NAME — строки
-        };
     }
 
     private static Sort parseSort(String sort) {
@@ -131,7 +108,7 @@ public final class MovieSpecifications {
                 .map(String::trim)
                 .filter(part -> !part.isEmpty())
                 .map(MovieSpecifications::toOrder)
-                .filter(java.util.Objects::nonNull)
+                .filter(Objects::nonNull)
                 .toList();
 
         return orders.isEmpty() ? Sort.unsorted() : Sort.by(orders);
@@ -143,7 +120,6 @@ public final class MovieSpecifications {
         String direction = parts.length > 1 ? parts[1].trim() : "asc";
 
         if (!isKnownSortField(fieldName)) {
-            // Неизвестное поле сортировки аккуратно игнорируем.
             return null;
         }
 

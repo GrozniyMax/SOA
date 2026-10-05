@@ -17,14 +17,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import ru.tbank.soa.movie.dto.ApiError;
 import ru.tbank.soa.movie.service.exception.InvalidMovieDataException;
+import ru.tbank.soa.movie.service.exception.InvalidSearchFilterException;
 import ru.tbank.soa.movie.service.exception.MovieNotFoundException;
 
 import java.util.stream.Collectors;
 
-/**
- * Глобальный обработчик исключений: маппит ошибки в {@link ApiError} и корректные HTTP-коды
- * в соответствии со спецификацией (400/404/406/415/422/500).
- */
 @Slf4j
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -53,7 +50,8 @@ public class ApiExceptionHandler {
             MissingServletRequestParameterException.class,
             MissingPathVariableException.class,
             HttpMessageNotReadableException.class,
-            BindException.class
+            BindException.class,
+            InvalidSearchFilterException.class
     })
     public ResponseEntity<ApiError> handleBadRequest(Exception e) {
         return build(HttpStatus.BAD_REQUEST, e.getMessage());

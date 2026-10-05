@@ -29,10 +29,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Лёгкий интеграционный тест DAO на in-memory H2.
- * Проверяет создание/обновление/чтение/удаление, поиск по критериям и жанры.
- */
 @DataJpaTest
 @ActiveProfiles("test")
 @Import({MovieEntityMapperImpl.class, JpaMovieDao.class})
@@ -122,19 +118,16 @@ class JpaMovieDaoTest {
         dao.save(movie("Dunkirk", "survive", MovieGenre.DRAMA, "Nolan"));
         dao.save(movie("Tenet", "time", MovieGenre.ACTION, "Nolan"));
 
-        // EQ на жанре
         PageResult<Movie> action = dao.search(new MovieSearchCriteria(
                 List.of(new Filter(MovieFieldPath.GENRE, "ACTION", FilterComparator.EQ)),
                 "name:asc", 0, 10));
         assertThat(action.total()).isEqualTo(2);
 
-        // SUBSTRING на director.name (dotted path)
         PageResult<Movie> nolan = dao.search(new MovieSearchCriteria(
                 List.of(new Filter(MovieFieldPath.DIRECTOR_NAME, "Nolan", FilterComparator.SUBSTRING)),
                 "name:asc", 0, 10));
         assertThat(nolan.total()).isEqualTo(3);
 
-        // GT на oscarsCount
         Movie heavy = new Movie(0L, "OscarHeavy",
                 new Coordinates(1, 1f), LocalDate.of(2020, 1, 1), 5, 100f,
                 "x", MovieGenre.FANTASY, new Person("D", null, null, null));
@@ -145,6 +138,38 @@ class JpaMovieDaoTest {
                 "name:asc", 0, 10));
         assertThat(oscarHeavy.total()).isEqualTo(1);
         assertThat(oscarHeavy.items().get(0).name()).isEqualTo("OscarHeavy");
+    }
+
+    @Test
+    void substringIsCaseInsensitive() {
+        dao.save(movie("Inception", "Dream Within", MovieGenre.ACTION, "Christopher Nolan"));
+        dao.save(movie("Arrival", "why", MovieGenre.DRAMA, "Denis Villeneuve"));
+
+        PageResult<Movie> byDirector = dao.search(new MovieSearchCriteria(
+                List.of(new Filter(MovieFieldPath.DIRECTOR_NAME, "nOLAN", FilterComparator.SUBSTRING)),
+                null, 0, 10));
+        assertThat(byDirector.items()).extracting(Movie::name).containsExactly("Inception");
+
+        PageResult<Movie> byTagline = dao.search(new MovieSearchCriteria(
+                List.of(new Filter(MovieFieldPath.TAGLINE, "dream w", FilterComparator.SUBSTRING)),
+                null, 0, 10));
+        assertThat(byTagline.items()).extracting(Movie::name).containsExactly("Inception");
+    }
+
+    @Test
+    void substringTreatsWildcardsLiterally() {
+        dao.save(movie("100% Love", "t", MovieGenre.DRAMA, "D"));
+        dao.save(movie("1000 Love", "t", MovieGenre.DRAMA, "D"));
+        dao.save(movie("snake_case", "t", MovieGenre.DRAMA, "D"));
+        dao.save(movie("snakeXcase", "t", MovieGenre.DRAMA, "D"));
+
+        PageResult<Movie> percent = dao.search(new MovieSearchCriteria(
+                List.of(new Filter(MovieFieldPath.NAME, "0%", FilterComparator.SUBSTRING)), null, 0, 10));
+        assertThat(percent.items()).extracting(Movie::name).containsExactly("100% Love");
+
+        PageResult<Movie> underscore = dao.search(new MovieSearchCriteria(
+                List.of(new Filter(MovieFieldPath.NAME, "e_c", FilterComparator.SUBSTRING)), null, 0, 10));
+        assertThat(underscore.items()).extracting(Movie::name).containsExactly("snake_case");
     }
 
     @Test
@@ -193,7 +218,6 @@ class JpaMovieDaoTest {
         Movie a = dao.save(movie("A", "t", MovieGenre.ACTION, "Shared"));
         Movie b = dao.save(movie("B", "t", MovieGenre.DRAMA, "Shared"));
 
-        // Оба фильма используют одни и те же координаты (1, 2.5) — одна строка, refCount=2.
         assertThat(coordinatesRepository.count()).isEqualTo(initialCount + 1);
         Optional<CoordinatesEntity> coords = coordinatesRepository.findByXAndY(1, 2.5f);
         assertThat(coords).isPresent();

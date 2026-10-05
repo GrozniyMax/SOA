@@ -5,21 +5,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.tbank.soa.movie.config.MovieProperties;
+import ru.tbank.soa.movie.domain.Filter;
 import ru.tbank.soa.movie.domain.Movie;
 import ru.tbank.soa.movie.domain.MovieGenre;
 import ru.tbank.soa.movie.domain.MovieSearchCriteria;
 import ru.tbank.soa.movie.domain.PageResult;
 import ru.tbank.soa.movie.repository.dao.MovieDao;
 import ru.tbank.soa.movie.service.exception.InvalidMovieDataException;
+import ru.tbank.soa.movie.service.exception.InvalidSearchFilterException;
 import ru.tbank.soa.movie.service.exception.MovieNotFoundException;
 
 import java.time.LocalDate;
 
-/**
- * Реализация бизнес-логики Movie Collection Service.
- * Вся бизнес-логика здесь; персистентность — только через {@link MovieDao},
- * настройки — через {@link MovieProperties}. Методы принимают/возвращают доменные объекты.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -35,7 +32,7 @@ public class MovieServiceImpl implements MovieService {
                 0L,
                 movie.name(),
                 movie.coordinates(),
-                LocalDate.now(), // генерируется автоматически
+                LocalDate.now(),
                 movie.oscarsCount(),
                 movie.totalBoxOffice(),
                 movie.tagline(),
@@ -58,7 +55,7 @@ public class MovieServiceImpl implements MovieService {
                 existing.id(),
                 movie.name(),
                 movie.coordinates(),
-                existing.creationDate(), // не меняется при обновлении
+                existing.creationDate(),
                 movie.oscarsCount(),
                 movie.totalBoxOffice(),
                 movie.tagline(),
@@ -79,6 +76,7 @@ public class MovieServiceImpl implements MovieService {
     @Override
     @Transactional(readOnly = true)
     public PageResult<Movie> searchMovies(MovieSearchCriteria criteria) {
+        criteria.filters().forEach(this::validate);
         return dao.search(criteria);
     }
 
@@ -101,10 +99,18 @@ public class MovieServiceImpl implements MovieService {
         return dao.findUniqueGenres(page, size);
     }
 
-    /**
-     * Проверка ограничений целостности доменных данных (защита на границе бизнес-слоя;
-     * основная валидация выполняется аннотациями в контроллере).
-     */
+    private void validate(Filter filter) {
+        if (filter.value() == null) {
+            throw new InvalidSearchFilterException("filter value for " + filter.path().getPath() + " must not be null");
+        }
+        try {
+            filter.path().parse(filter.value());
+        } catch (RuntimeException e) {
+            throw new InvalidSearchFilterException(
+                    "invalid value '" + filter.value() + "' for filter " + filter.path().getPath());
+        }
+    }
+
     private void validate(Movie movie) {
         if (movie.name() == null || movie.name().isBlank()) {
             throw new InvalidMovieDataException("name must not be null or blank");

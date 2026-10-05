@@ -3,20 +3,26 @@ package ru.tbank.soa.movie.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.tbank.soa.movie.config.MovieProperties;
 import ru.tbank.soa.movie.domain.Coordinates;
 import ru.tbank.soa.movie.domain.EyeColor;
+import ru.tbank.soa.movie.domain.Filter;
+import ru.tbank.soa.movie.domain.FilterComparator;
 import ru.tbank.soa.movie.domain.HairColor;
 import ru.tbank.soa.movie.domain.Movie;
+import ru.tbank.soa.movie.domain.MovieFieldPath;
 import ru.tbank.soa.movie.domain.MovieGenre;
 import ru.tbank.soa.movie.domain.MovieSearchCriteria;
 import ru.tbank.soa.movie.domain.PageResult;
 import ru.tbank.soa.movie.domain.Person;
 import ru.tbank.soa.movie.repository.dao.MovieDao;
 import ru.tbank.soa.movie.service.exception.InvalidMovieDataException;
+import ru.tbank.soa.movie.service.exception.InvalidSearchFilterException;
 import ru.tbank.soa.movie.service.exception.MovieNotFoundException;
 
 import java.time.LocalDate;
@@ -150,5 +156,34 @@ class MovieServiceImplTest {
         assertThat(service.searchMovies(criteria)).isSameAs(page);
         assertThat(service.getByDirectorGreaterThan("Nolan", 0, 20)).isSameAs(page);
         assertThat(service.getUniqueGenres(0, 20)).isSameAs(genres);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "OSCARS_COUNT, abc",
+            "ID, 1.5",
+            "COORDINATES_Y, x",
+            "CREATION_DATE, 2026-13-45",
+            "GENRE, COMEDY",
+            "DIRECTOR_EYE_COLOR, blue"
+    })
+    void searchRejectsUnparsableFilterValue(MovieFieldPath path, String value) {
+        MovieSearchCriteria criteria = new MovieSearchCriteria(
+                List.of(new Filter(path, value, FilterComparator.GT)), null, 0, 20);
+
+        assertThatThrownBy(() -> service.searchMovies(criteria))
+                .isInstanceOf(InvalidSearchFilterException.class)
+                .hasMessageContaining(path.getPath());
+        verify(dao, never()).search(any());
+    }
+
+    @Test
+    void searchRejectsNullFilterValue() {
+        MovieSearchCriteria criteria = new MovieSearchCriteria(
+                List.of(new Filter(MovieFieldPath.NAME, null, FilterComparator.EQ)), null, 0, 20);
+
+        assertThatThrownBy(() -> service.searchMovies(criteria))
+                .isInstanceOf(InvalidSearchFilterException.class);
+        verify(dao, never()).search(any());
     }
 }
