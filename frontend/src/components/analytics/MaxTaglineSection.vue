@@ -10,7 +10,6 @@ import GenreTag from '@/components/ui/GenreTag.vue'
 import SectionCard from '@/components/ui/SectionCard.vue'
 import SkeletonBlock from '@/components/ui/SkeletonBlock.vue'
 import { useAsyncData } from '@/composables/useAsyncData'
-import { formatLongDate } from '@/domain/format'
 
 const query = useAsyncData((signal) => moviesApi.getWithMaxTagline(signal))
 
@@ -47,17 +46,11 @@ const movie = computed(() => query.data.value)
         <p>{{ movie.tagline }}</p>
       </blockquote>
       <div class="meta">
-        <p class="meta-text">
-          Это слоган фильма <b>«{{ movie.name }}»</b> режиссёра {{ movie.director.name }}: при сравнении строк
-          он стоит последним среди всех слоганов коллекции. Фильм добавлен {{ formatLongDate(movie.creationDate) }}
-        </p>
-        <div class="meta-actions">
-          <GenreTag :genre="movie.genre" />
-          <RouterLink :to="{ path: '/movies', query: { movie: String(movie.id) } }" class="open-link">
-            Открыть карточку
-            <IconArrowRight :size="15" stroke-width="2" />
-          </RouterLink>
-        </div>
+        <GenreTag :genre="movie.genre" />
+        <RouterLink :to="{ path: '/movies', query: { movie: String(movie.id) } }" class="open-link">
+          Открыть карточку
+          <IconArrowRight :size="15" stroke-width="2" />
+        </RouterLink>
       </div>
     </div>
   </SectionCard>
@@ -101,23 +94,6 @@ const movie = computed(() => query.data.value)
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-}
-
-.meta-text {
-  flex: 1;
-  min-width: 260px;
-  color: var(--text-secondary);
-}
-
-.meta-text b {
-  color: var(--text);
-  font-weight: 600;
-}
-
-.meta-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
 }
 
 .open-link {

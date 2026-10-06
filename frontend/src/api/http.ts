@@ -29,7 +29,9 @@ export class ApiException extends Error {
     serverMessage?: string | null
     cause?: unknown
   }) {
-    super(describeStatus(params.service, params.kind, params.status ?? null), { cause: params.cause })
+    const status = params.status ?? null
+    const text = describeStatus(params.service, params.kind, status)
+    super(params.kind === 'http' && status !== null ? `${status} ${text}` : text, { cause: params.cause })
     this.name = 'ApiException'
     this.service = params.service
     this.kind = params.kind
@@ -76,7 +78,7 @@ function describeStatus(service: ServiceName, kind: ApiErrorKind, status: number
     case 504:
       return 'Сервис фильмов не ответил вовремя'
     default:
-      return `${title} вернул ошибку ${status ?? ''}`.trim()
+      return `${title} вернул ошибку`
   }
 }
 

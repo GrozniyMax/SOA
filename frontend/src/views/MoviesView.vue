@@ -21,7 +21,6 @@ import OpenByIdPopover from '@/components/movies/OpenByIdPopover.vue'
 import { useAsyncData } from '@/composables/useAsyncData'
 import { toSearchRequest, useMovieSearchState, type SortOrder } from '@/composables/useMovieSearchState'
 import { isFieldPath } from '@/domain/fields'
-import { formatInteger, pluralize } from '@/domain/format'
 
 const { state, update, reset } = useMovieSearchState()
 const route = useRoute()
@@ -122,14 +121,6 @@ const total = computed(() => query.data.value?.total ?? 0)
 const hasConditions = computed(() => state.value.filters.length > 0 || state.value.q !== '')
 const hasAnything = computed(() => hasConditions.value || state.value.sort.length > 0)
 
-const subtitle = computed(() => {
-  if (query.error.value) return 'Не удалось загрузить коллекцию'
-  if (query.data.value === null) return 'Загрузка коллекции…'
-  const count = total.value
-  const word = pluralize(count, 'фильм', 'фильма', 'фильмов')
-  return hasConditions.value ? `Найдено ${formatInteger(count)} ${word}` : `${formatInteger(count)} ${word} в коллекции`
-})
-
 function setFilters(filters: MovieFilter[]) {
   update({ filters })
 }
@@ -157,7 +148,7 @@ function resetAll() {
 
 <template>
   <section class="movies">
-    <PageHeader title="Фильмы" :subtitle="subtitle">
+    <PageHeader title="Фильмы">
       <template #actions>
         <OpenByIdPopover @open="openDetails" />
         <BaseButton variant="primary" :icon="IconPlus" @click="openCreate">Добавить</BaseButton>

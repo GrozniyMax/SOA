@@ -43,10 +43,11 @@ function submit() {
       <BaseButton variant="secondary" :icon="IconHash" @click="open = !open">Открыть по ID</BaseButton>
     </template>
     <form class="by-id" @submit.prevent="submit">
-      <FormField label="ID фильма" for-id="open-by-id" :error="error">
+      <FormField label="ID фильма" for-id="open-by-id">
         <BaseInput id="open-by-id" ref="inputRef" v-model="value" placeholder="12" size="sm" :invalid="!!error" />
       </FormField>
       <BaseButton type="submit" size="sm" variant="primary">Открыть</BaseButton>
+      <p v-if="error" class="by-id-error" role="alert">{{ error }}</p>
     </form>
   </PopoverPanel>
 </template>
@@ -59,11 +60,10 @@ function submit() {
   align-items: end;
 }
 
-.by-id :deep(.field-error) {
-  position: absolute;
-}
-
-.by-id :deep(.field) {
-  position: relative;
+.by-id-error {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--danger-text);
 }
 </style>
