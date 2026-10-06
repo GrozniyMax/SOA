@@ -138,18 +138,12 @@ function setSort(sort: SortOrder[]) {
   update({ sort })
 }
 
-function onHeaderSort(key: string, additive: boolean) {
+function onHeaderSort(key: string) {
   if (!isFieldPath(key)) return
   const current = state.value.sort
   const existing = current.find((s) => s.key === key)
-  const nextDir = (s: SortOrder | undefined): SortOrder['dir'] | null =>
-    s === undefined ? 'asc' : s.dir === 'asc' ? 'desc' : null
+  const dir = existing === undefined ? 'asc' : existing.dir === 'asc' ? 'desc' : null
 
-  const dir = nextDir(existing)
-  if (!additive) {
-    setSort(dir ? [{ key, dir }] : [])
-    return
-  }
   if (!existing) setSort([...current, { key, dir: 'asc' }])
   else if (dir) setSort(current.map((s) => (s.key === key ? { ...s, dir } : s)))
   else setSort(current.filter((s) => s.key !== key))

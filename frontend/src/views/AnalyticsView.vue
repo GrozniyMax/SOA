@@ -7,7 +7,7 @@ import GenresSection from '@/components/analytics/GenresSection.vue'
 
 <template>
   <section class="analytics">
-    <PageHeader title="Аналитика" subtitle="Дополнительные запросы к коллекции фильмов" />
+    <PageHeader title="Аналитика" />
     <div class="grid">
       <MaxTaglineSection />
       <GenresSection />

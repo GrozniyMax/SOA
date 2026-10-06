@@ -25,7 +25,7 @@ withDefaults(
 )
 
 const emit = defineEmits<{
-  sort: [key: string, additive: boolean]
+  sort: [key: string]
   open: [movie: Movie]
 }>()
 
@@ -55,7 +55,7 @@ function columns(sortable: boolean, compact: boolean): TableColumn<Movie>[] {
     :generation="generation"
     :clickable="clickable"
     :min-width="compact ? '880px' : '1040px'"
-    @sort="(key, additive) => emit('sort', key, additive)"
+    @sort="(key) => emit('sort', key)"
     @row-click="(m) => emit('open', m)"
   >
     <template #cell-name="{ row }">

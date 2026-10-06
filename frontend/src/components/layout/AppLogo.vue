@@ -30,28 +30,5 @@
   transform-box: view-box;
   transform-origin: 4px 9.4px;
   transform: rotate(-16deg);
-  transition: transform var(--dur) var(--ease);
-}
-
-:global(.brand:hover) .stick {
-  animation: clap 520ms var(--ease) both;
-}
-
-@keyframes clap {
-  0% {
-    transform: rotate(-16deg);
-  }
-  35% {
-    transform: rotate(0deg);
-  }
-  55% {
-    transform: rotate(-6deg);
-  }
-  75% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(-16deg);
-  }
 }
 </style>

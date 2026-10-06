@@ -13,7 +13,7 @@ function onHumiliated() {
 
 <template>
   <section class="oscar">
-    <PageHeader title="Оскары" subtitle="Операции сервиса оскаров поверх коллекции фильмов" />
+    <PageHeader title="Оскары" />
     <div class="grid">
       <HumiliateSection @done="onHumiliated" />
       <LosersSection ref="losers" />

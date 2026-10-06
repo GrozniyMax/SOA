@@ -41,7 +41,7 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  sort: [key: string, additive: boolean]
+  sort: [key: string]
   rowClick: [row: T]
 }>()
 
@@ -59,9 +59,9 @@ const sortIndex = computed(() => {
 
 const showSkeleton = computed(() => props.loading && props.rows.length === 0)
 
-function onHeaderClick(column: TableColumn<T>, event: MouseEvent) {
+function onHeaderClick(column: TableColumn<T>) {
   if (!column.sortable) return
-  emit('sort', column.key, event.shiftKey || event.metaKey || event.ctrlKey)
+  emit('sort', column.key)
 }
 
 function ariaSort(column: TableColumn<T>): 'ascending' | 'descending' | 'none' | undefined {
@@ -99,8 +99,8 @@ function cellText(column: TableColumn<T>, row: T): string {
                 v-if="column.sortable"
                 type="button"
                 class="th-sort"
-                :title="'Сортировать. Shift — добавить к сортировке'"
-                @click="onHeaderClick(column, $event)"
+                :title="'Сортировать'"
+                @click="onHeaderClick(column)"
               >
                 <span>{{ column.label }}</span>
                 <span class="sort-icon">
