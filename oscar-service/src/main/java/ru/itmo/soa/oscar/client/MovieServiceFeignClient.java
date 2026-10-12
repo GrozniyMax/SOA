@@ -7,8 +7,8 @@ import ru.itmo.soa.oscar.config.MovieFeignConfiguration;
 /**
  * Spring-обёртка над сгенерированным из OpenAPI-спецификации movie-service
  * Feign-интерфейсом {@link MoviesApi}. Базовый URL задаётся настройкой
- * {@code movie.service.url}. Используется вместо ручного WebClient-клиента
- * (переключение точек вызова — отдельный этап).
+ * {@code movie.service.url}. Используется для всех межсервисных вызовов
+ * movie-service (поиск фильмов и отзыв Оскаров у режиссёров).
  */
 @FeignClient(
         name = "movie-service",

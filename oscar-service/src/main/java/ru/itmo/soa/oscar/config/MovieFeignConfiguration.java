@@ -24,8 +24,8 @@ import java.util.concurrent.TimeUnit;
  * {@code @Configuration}: используется только как per-client конфигурация
  * {@code @FeignClient(configuration = ...)}, чтобы бины не применялись глобально.
  *
- * <p>Паритет с {@link WebClientConfig}: connect timeout 3000 мс, read timeout 5000 мс,
- * опциональный truststore из {@link MovieServiceProperties}.</p>
+ * <p>Connect timeout 3000 мс, read timeout 5000 мс, опциональный truststore
+ * из {@link MovieServiceProperties}.</p>
  */
 public class MovieFeignConfiguration {
 
@@ -43,7 +43,7 @@ public class MovieFeignConfiguration {
     }
 
     /**
-     * Таймауты: 3000 мс на соединение, 5000 мс на ответ (как в {@link WebClientConfig}).
+     * Таймауты: 3000 мс на соединение, 5000 мс на ответ.
      */
     @Bean
     public Request.Options requestOptions() {

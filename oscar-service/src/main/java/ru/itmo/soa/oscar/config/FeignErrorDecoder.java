@@ -14,9 +14,8 @@ import java.util.concurrent.TimeoutException;
 /**
  * Маппинг ошибок Feign-клиента в доменные исключения oscar-service.
  *
- * <p>Семантика повторяет {@code WebMovieServiceClient.mapError/unwrap}: цепочка причин
- * раскручивается до первой значимой причины, останавливаясь на таймауте или ошибке
- * соединения.</p>
+ * <p>Цепочка причин раскручивается до первой значимой причины,
+ * останавливаясь на таймауте или ошибке соединения.</p>
  *
  * <ul>
  *   <li>таймаут (SocketTimeoutException/TimeoutException) →
@@ -60,8 +59,7 @@ public class FeignErrorDecoder implements ErrorDecoder {
     }
 
     /**
-     * Раскручивает цепочку причин до первого значимого исключения — как в
-     * {@code WebMovieServiceClient.unwrap}.
+     * Раскручивает цепочку причин до первого значимого исключения.
      */
     private Throwable unwrap(Throwable t) {
         Throwable current = t;
