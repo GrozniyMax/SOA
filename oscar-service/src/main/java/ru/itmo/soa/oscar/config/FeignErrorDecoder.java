@@ -8,7 +8,6 @@ import ru.itmo.soa.oscar.service.exception.MovieServiceUnavailableException;
 
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeoutException;
 
 /**

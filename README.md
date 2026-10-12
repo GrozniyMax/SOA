@@ -81,6 +81,7 @@ exception/    # глобальный @RestControllerAdvice → ApiError
 | `MOVIE_DB_URL` / `MOVIE_DB_USERNAME` / `MOVIE_DB_PASSWORD` | movie-service | `jdbc:postgresql://localhost:5432/movie` |
 | `OSCAR_DB_URL` / `OSCAR_DB_USERNAME` / `OSCAR_DB_PASSWORD` | oscar-service | `jdbc:postgresql://localhost:5432/oscar` |
 | `MOVIE_SERVICE_URL` | oscar-service | `http://localhost:8080` (в контейнерах — `https://movie:8443/movie-service`) |
+| `MOVIE_HUMILIATE_BATCH_SIZE` | oscar-service | `10` (размер чанка режиссёров в батчевом humiliate) |
 | `MOVIE_SERVICE_TRUSTSTORE` / `MOVIE_SERVICE_TRUSTSTORE_PASSWORD` | oscar-service | не задан (Feign-клиент доверяет только JDK cacerts) |
 | `CORS_ALLOWED_ORIGINS` | оба | не задан (CORS выключен) |
 | `JPA_DDL_AUTO` | оба | `update` |
