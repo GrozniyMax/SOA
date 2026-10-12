@@ -110,7 +110,10 @@ class OscarServiceImplTest {
 
         service.getLosers(0, 10);
 
-        verify(moviesApi, times(2)).searchMovies(any());
+        var pages = forClass(MovieSearchRequest.class);
+        verify(moviesApi, times(2)).searchMovies(pages.capture());
+        assertThat(pages.getAllValues().get(0).getPage()).isZero();
+        assertThat(pages.getAllValues().get(1).getPage()).isEqualTo(1);
     }
 
     @Test

@@ -73,6 +73,9 @@ public class OscarServiceImpl implements OscarService {
             List<String> chunk = ordered.subList(from, Math.min(from + batchSize, ordered.size()));
             DirectorsHumiliationResult result = moviesApi.humiliateDirectors(
                     new DirectorsHumiliateRequest().directors(new ArrayList<>(chunk)));
+            if (result == null || result.getResults() == null) {
+                continue;
+            }
             for (DirectorsHumiliation humiliation : result.getResults()) {
                 int revoked = humiliation.getRevokedOscars() == null ? 0 : humiliation.getRevokedOscars();
                 revokedOscars += revoked;
