@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import ru.itmo.soa.movie.domain.Coordinates;
+import ru.itmo.soa.movie.domain.DirectorsHumiliation;
 import ru.itmo.soa.movie.domain.Movie;
 import ru.itmo.soa.movie.domain.MovieGenre;
 import ru.itmo.soa.movie.domain.MovieSearchCriteria;
@@ -22,8 +23,11 @@ import ru.itmo.soa.movie.repository.jpa.MovieSpecifications;
 import ru.itmo.soa.movie.repository.jpa.PersonJpaRepository;
 import ru.itmo.soa.movie.repository.mapper.MovieEntityMapper;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Реализация {@link MovieDao} поверх Spring Data JPA.
@@ -137,6 +141,17 @@ public class JpaMovieDao implements MovieDao {
                 ? List.of()
                 : distinct.subList(from, Math.min(from + safeSize, distinct.size()));
         return new PageResult<>(items, total, safePage, safeSize);
+    }
+
+    @Override
+    @Transactional
+    public List<DirectorsHumiliation> humiliateDirectors(Collection<String> directors) {
+        Map<String, Integer> revoked = movieRepository.sumOscarsByDirectors(directors).stream()
+                .collect(Collectors.toMap(row -> (String) row[0], row -> ((Number) row[1]).intValue(), Integer::sum));
+        movieRepository.nullOscarsByDirectors(directors);
+        return directors.stream()
+                .map(director -> new DirectorsHumiliation(director, revoked.getOrDefault(director, 0)))
+                .toList();
     }
 
     /**

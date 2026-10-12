@@ -9,6 +9,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.itmo.soa.movie.controller.mapper.MovieApiMapperImpl;
 import ru.itmo.soa.movie.domain.Coordinates;
+import ru.itmo.soa.movie.domain.DirectorsHumiliation;
 import ru.itmo.soa.movie.domain.EyeColor;
 import ru.itmo.soa.movie.domain.Movie;
 import ru.itmo.soa.movie.domain.MovieGenre;
@@ -18,6 +19,7 @@ import ru.itmo.soa.movie.service.exception.InvalidSearchFilterException;
 import ru.itmo.soa.movie.service.exception.MovieNotFoundException;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -89,5 +91,35 @@ class MoviesApiControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("invalid value 'abc' for filter oscarsCount"));
+    }
+
+    @Test
+    void humiliateDirectorsReturns200WithPerDirectorResults() throws Exception {
+        when(service.humiliateDirectors(any())).thenReturn(List.of(
+                new DirectorsHumiliation("Nolan", 4),
+                new DirectorsHumiliation("Kubrick", 0)));
+
+        mockMvc.perform(post("/movies/directors/humiliate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"directors":["Nolan","Kubrick"]}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.results.length()").value(2))
+                .andExpect(jsonPath("$.results[0].director").value("Nolan"))
+                .andExpect(jsonPath("$.results[0].revokedOscars").value(4))
+                .andExpect(jsonPath("$.results[1].director").value("Kubrick"))
+                .andExpect(jsonPath("$.results[1].revokedOscars").value(0));
+    }
+
+    @Test
+    void humiliateDirectorsReturns400ForEmptyDirectorsArray() throws Exception {
+        mockMvc.perform(post("/movies/directors/humiliate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"directors":[]}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
     }
 }

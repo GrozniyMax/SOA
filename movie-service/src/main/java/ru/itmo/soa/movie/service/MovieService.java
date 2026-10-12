@@ -1,9 +1,13 @@
 package ru.itmo.soa.movie.service;
 
+import ru.itmo.soa.movie.domain.DirectorsHumiliation;
 import ru.itmo.soa.movie.domain.Movie;
 import ru.itmo.soa.movie.domain.MovieGenre;
 import ru.itmo.soa.movie.domain.MovieSearchCriteria;
 import ru.itmo.soa.movie.domain.PageResult;
+
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Бизнес-логика Movie Collection Service.
@@ -26,4 +30,9 @@ public interface MovieService {
     Movie getMovieWithMaxTagline();
 
     PageResult<MovieGenre> getUniqueGenres(int page, int size);
+
+    /**
+     * Отзывает все Оскары у фильмов перечисленных режиссёров одним запросом.
+     */
+    List<DirectorsHumiliation> humiliateDirectors(Collection<String> directors);
 }

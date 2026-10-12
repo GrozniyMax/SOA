@@ -11,6 +11,8 @@ import ru.itmo.soa.movie.dto.Movie;
 import ru.itmo.soa.movie.dto.MoviePage;
 import ru.itmo.soa.movie.dto.MovieRequest;
 import ru.itmo.soa.movie.dto.MovieSearchRequest;
+import ru.itmo.soa.movie.dto.DirectorsHumiliationResult;
+import ru.itmo.soa.movie.dto.DirectorsHumiliateRequest;
 import ru.itmo.soa.movie.service.MovieService;
 
 import java.net.URI;
@@ -71,5 +73,11 @@ public class MoviesApiController implements MoviesApi {
     @Override
     public ResponseEntity<MoviePage> searchMovies(MovieSearchRequest movieSearchRequest) {
         return ResponseEntity.ok(mapper.toMoviePage(service.searchMovies(mapper.toDomain(movieSearchRequest))));
+    }
+
+    @Override
+    public ResponseEntity<DirectorsHumiliationResult> humiliateDirectors(DirectorsHumiliateRequest directorsHumiliateRequest) {
+        return ResponseEntity.ok(mapper.toDirectorsHumiliationResult(
+                service.humiliateDirectors(directorsHumiliateRequest.getDirectors())));
     }
 }

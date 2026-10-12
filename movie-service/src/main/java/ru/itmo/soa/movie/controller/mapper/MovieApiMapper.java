@@ -3,6 +3,7 @@ package ru.itmo.soa.movie.controller.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 import ru.itmo.soa.movie.domain.Coordinates;
+import ru.itmo.soa.movie.domain.DirectorsHumiliation;
 import ru.itmo.soa.movie.domain.Filter;
 import ru.itmo.soa.movie.domain.Movie;
 import ru.itmo.soa.movie.domain.MovieGenre;
@@ -14,6 +15,8 @@ import ru.itmo.soa.movie.dto.MovieFilter;
 import ru.itmo.soa.movie.dto.MoviePage;
 import ru.itmo.soa.movie.dto.MovieRequest;
 import ru.itmo.soa.movie.dto.MovieSearchRequest;
+
+import java.util.List;
 
 /**
  * MapStruct-маппер между DTO из OpenAPI-спецификации и доменной моделью.
@@ -42,4 +45,12 @@ public interface MovieApiMapper {
     MoviePage toMoviePage(PageResult<Movie> page);
 
     GenrePage toGenrePage(PageResult<MovieGenre> page);
+
+    ru.itmo.soa.movie.dto.DirectorsHumiliation toDto(DirectorsHumiliation humiliation);
+
+    default ru.itmo.soa.movie.dto.DirectorsHumiliationResult toDirectorsHumiliationResult(
+            List<DirectorsHumiliation> humiliations) {
+        return new ru.itmo.soa.movie.dto.DirectorsHumiliationResult(
+                humiliations.stream().map(this::toDto).toList());
+    }
 }

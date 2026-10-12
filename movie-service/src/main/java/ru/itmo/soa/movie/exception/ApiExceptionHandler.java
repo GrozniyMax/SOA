@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import ru.itmo.soa.movie.dto.ApiError;
+import ru.itmo.soa.movie.dto.DirectorsHumiliateRequest;
 import ru.itmo.soa.movie.service.exception.InvalidMovieDataException;
 import ru.itmo.soa.movie.service.exception.InvalidSearchFilterException;
 import ru.itmo.soa.movie.service.exception.MovieNotFoundException;
@@ -41,7 +42,11 @@ public class ApiExceptionHandler {
         String message = e.getBindingResult().getFieldErrors().stream()
                 .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
                 .collect(Collectors.joining("; "));
-        return build(HttpStatus.UNPROCESSABLE_ENTITY, message);
+        // Спецификация humiliateDirectors объявляет 400, а не 422, для невалидного тела.
+        HttpStatus status = e.getBindingResult().getTarget() instanceof DirectorsHumiliateRequest
+                ? HttpStatus.BAD_REQUEST
+                : HttpStatus.UNPROCESSABLE_ENTITY;
+        return build(status, message);
     }
 
     @ExceptionHandler({

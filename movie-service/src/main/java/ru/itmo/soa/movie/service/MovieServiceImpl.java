@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.itmo.soa.movie.config.MovieProperties;
+import ru.itmo.soa.movie.domain.DirectorsHumiliation;
 import ru.itmo.soa.movie.domain.Filter;
 import ru.itmo.soa.movie.domain.Movie;
 import ru.itmo.soa.movie.domain.MovieGenre;
@@ -16,6 +17,8 @@ import ru.itmo.soa.movie.service.exception.InvalidSearchFilterException;
 import ru.itmo.soa.movie.service.exception.MovieNotFoundException;
 
 import java.time.LocalDate;
+import java.util.Collection;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -97,6 +100,11 @@ public class MovieServiceImpl implements MovieService {
     @Transactional(readOnly = true)
     public PageResult<MovieGenre> getUniqueGenres(int page, int size) {
         return dao.findUniqueGenres(page, size);
+    }
+
+    @Override
+    public List<DirectorsHumiliation> humiliateDirectors(Collection<String> directors) {
+        return dao.humiliateDirectors(directors);
     }
 
     private void validate(Filter filter) {

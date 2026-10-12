@@ -1,11 +1,13 @@
 package ru.itmo.soa.movie.repository;
 
 import org.junit.jupiter.api.Test;
+import jakarta.persistence.EntityManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import ru.itmo.soa.movie.domain.Coordinates;
+import ru.itmo.soa.movie.domain.DirectorsHumiliation;
 import ru.itmo.soa.movie.domain.EyeColor;
 import ru.itmo.soa.movie.domain.Filter;
 import ru.itmo.soa.movie.domain.FilterComparator;
@@ -42,6 +44,9 @@ class JpaMovieDaoTest {
 
     @Autowired
     private PersonJpaRepository personRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     private static Movie movie(String name, String tagline, MovieGenre genre, String directorName) {
         return new Movie(
@@ -241,5 +246,45 @@ class JpaMovieDaoTest {
 
         assertThat(personRepository.count()).isEqualTo(1);
         assertThat(personRepository.findByName("Nolan")).isPresent();
+    }
+
+    @Test
+    void humiliateDirectorsRevokesOscarsSumsPerDirectorAndKeepsRequestOrder() {
+        Movie nolanA = dao.save(movie("A", "t", MovieGenre.ACTION, "Nolan"));
+        Movie nolanB = dao.save(movie("B", "t", MovieGenre.DRAMA, "Nolan"));
+        Movie kubrick = dao.save(movie("C", "t", MovieGenre.ACTION, "Kubrick"));
+        dao.save(new Movie(0L, "D", new Coordinates(1, 2.5f), LocalDate.of(2020, 1, 1),
+                null, 100f, "t", MovieGenre.FANTASY,
+                new Person("Villeneuve", LocalDate.of(1970, 5, 5), EyeColor.BLUE, HairColor.BROWN)));
+
+        List<DirectorsHumiliation> result = dao.humiliateDirectors(
+                List.of("Nobody", "Nolan", "Villeneuve"));
+
+        assertThat(result).containsExactly(
+                new DirectorsHumiliation("Nobody", 0),
+                new DirectorsHumiliation("Nolan", 4),
+                new DirectorsHumiliation("Villeneuve", 0));
+        // Массовый UPDATE идёт мимо контекста персистентности — сбрасываем кэш первого уровня.
+        entityManager.clear();
+        assertThat(dao.findById(nolanA.id()).orElseThrow().oscarsCount()).isNull();
+        assertThat(dao.findById(nolanB.id()).orElseThrow().oscarsCount()).isNull();
+        assertThat(dao.findById(kubrick.id()).orElseThrow().oscarsCount()).isEqualTo(2);
+    }
+
+    @Test
+    void humiliateDirectorsHandlesDuplicateDirectorNamesInRequest() {
+        Movie nolanA = dao.save(movie("A", "t", MovieGenre.ACTION, "Nolan"));
+        Movie nolanB = dao.save(movie("B", "t", MovieGenre.DRAMA, "Nolan"));
+        dao.save(movie("K", "t", MovieGenre.FANTASY, "Kubrick"));
+
+        List<DirectorsHumiliation> result = dao.humiliateDirectors(List.of("Nolan", "Nolan"));
+
+        // По каждому элементу запроса возвращается запись с полной суммой (2 + 2), без исключений.
+        assertThat(result).containsExactly(
+                new DirectorsHumiliation("Nolan", 4),
+                new DirectorsHumiliation("Nolan", 4));
+        entityManager.clear();
+        assertThat(dao.findById(nolanA.id()).orElseThrow().oscarsCount()).isNull();
+        assertThat(dao.findById(nolanB.id()).orElseThrow().oscarsCount()).isNull();
     }
 }

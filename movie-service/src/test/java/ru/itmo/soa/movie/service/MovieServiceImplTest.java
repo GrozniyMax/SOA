@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import ru.itmo.soa.movie.config.MovieProperties;
 import ru.itmo.soa.movie.domain.Coordinates;
+import ru.itmo.soa.movie.domain.DirectorsHumiliation;
 import ru.itmo.soa.movie.domain.EyeColor;
 import ru.itmo.soa.movie.domain.Filter;
 import ru.itmo.soa.movie.domain.FilterComparator;
@@ -156,6 +157,17 @@ class MovieServiceImplTest {
         assertThat(service.searchMovies(criteria)).isSameAs(page);
         assertThat(service.getByDirectorGreaterThan("Nolan", 0, 20)).isSameAs(page);
         assertThat(service.getUniqueGenres(0, 20)).isSameAs(genres);
+    }
+
+    @Test
+    void humiliateDirectorsDelegatesToDao() {
+        List<DirectorsHumiliation> expected = List.of(
+                new DirectorsHumiliation("Nolan", 4),
+                new DirectorsHumiliation("Nobody", 0));
+        when(dao.humiliateDirectors(List.of("Nolan", "Nobody"))).thenReturn(expected);
+
+        assertThat(service.humiliateDirectors(List.of("Nolan", "Nobody"))).isSameAs(expected);
+        verify(dao).humiliateDirectors(List.of("Nolan", "Nobody"));
     }
 
     @ParameterizedTest

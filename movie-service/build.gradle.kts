@@ -26,8 +26,8 @@ openApiGenerate {
     generatorName.set("spring")
     inputSpec.set("$rootDir/openapi/movie-service.yaml")
     outputDir.set("$buildDir/generated")
-    apiPackage.set("ru.tbank.soa.movie.api")
-    modelPackage.set("ru.tbank.soa.movie.dto")
+    apiPackage.set("ru.itmo.soa.movie.api")
+    modelPackage.set("ru.itmo.soa.movie.dto")
     configOptions.set(mapOf(
         "interfaceOnly" to "true",
         "useTags" to "true",
