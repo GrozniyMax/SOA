@@ -20,7 +20,7 @@
 - **OpenAPI codegen** (`org.openapi.generator`): из `openapi/*.yaml` генерируются
   интерфейсы контроллеров и DTO (jakarta, Bean Validation)
 - **MapStruct** — маппинг между слоями (DTO↔domain, entity↔domain), **Lombok**
-- **WebClient** (WebFlux) — вызов movie-service из oscar-service
+- **Spring Cloud OpenFeign** — вызов movie-service из oscar-service (клиент генерируется из `openapi/movie-service.yaml`)
 - **H2** (dev-профиль) / **PostgreSQL** (prod, через env)
 
 ## Структура модуля (DDD)
@@ -38,8 +38,8 @@ repository/
   dao/        # DAO-интерфейс (только домен) + реализация
   mapper/     # MapStruct (entity↔domain)
 service/      # бизнес-логика; принимает/возвращает домен, работает только через DAO
-client/       # (oscar-service) WebClient-клиент к movie-service
-config/       # @ConfigurationProperties, WebClient, сидер данных
+client/       # (oscar-service) Feign-клиент к movie-service
+config/       # @ConfigurationProperties, конфигурация Feign, сидер данных
 exception/    # глобальный @RestControllerAdvice → ApiError
 ```
 
@@ -62,6 +62,7 @@ exception/    # глобальный @RestControllerAdvice → ApiError
 - `GET /movies/{id}` / `PUT /movies/{id}` / `DELETE /movies/{id}`
 - `GET /movies/by-max-tagline` — фильм с максимальным tagline
 - `GET /movies/by-directors-greater-than?director=...` — фильмы, режиссёр больше заданного
+- `POST /movies/directors/humiliate` — батчево отобрать Оскары у фильмов списка режиссёров
 - `GET /movies/genres` — уникальные жанры
 
 **oscar-service** (базовый путь `/oscar`):
@@ -80,7 +81,7 @@ exception/    # глобальный @RestControllerAdvice → ApiError
 | `MOVIE_DB_URL` / `MOVIE_DB_USERNAME` / `MOVIE_DB_PASSWORD` | movie-service | `jdbc:postgresql://localhost:5432/movie` |
 | `OSCAR_DB_URL` / `OSCAR_DB_USERNAME` / `OSCAR_DB_PASSWORD` | oscar-service | `jdbc:postgresql://localhost:5432/oscar` |
 | `MOVIE_SERVICE_URL` | oscar-service | `http://localhost:8080` (в контейнерах — `https://movie:8443/movie-service`) |
-| `MOVIE_SERVICE_TRUSTSTORE` / `MOVIE_SERVICE_TRUSTSTORE_PASSWORD` | oscar-service | не задан (WebClient доверяет только JDK cacerts) |
+| `MOVIE_SERVICE_TRUSTSTORE` / `MOVIE_SERVICE_TRUSTSTORE_PASSWORD` | oscar-service | не задан (Feign-клиент доверяет только JDK cacerts) |
 | `CORS_ALLOWED_ORIGINS` | оба | не задан (CORS выключен) |
 | `JPA_DDL_AUTO` | оба | `update` |
 
@@ -119,7 +120,7 @@ docker compose -f deploy/docker-compose.yml up -d --build
 ```
 
 `gen-certs.sh` создаёт в `deploy/certs/` (в gitignore) самоподписанные сертификаты: `movie.p12`, `oscar.p12`,
-`movie-truststore.p12` (сертификат movie-service для WebClient oscar-service) и `frontend.crt/.key`.
+`movie-truststore.p12` (сертификат movie-service для Feign-клиента oscar-service) и `frontend.crt/.key`.
 Каталог монтируется в контейнеры как `/certs`; Payara импортирует `movie.p12` в keystore домена при старте.
 
 С сертификатом Let's Encrypt (на сервере с доменом):
@@ -137,7 +138,7 @@ MOVIE_SERVICE_TRUSTSTORE=
 CORS_ALLOWED_ORIGINS=https://64-188-64-15.sslip.io:4173
 ```
 
-Пустой `MOVIE_SERVICE_TRUSTSTORE` — WebClient доверяет стандартному cacerts JDK. После продления
+Пустой `MOVIE_SERVICE_TRUSTSTORE` — Feign-клиент доверяет стандартному cacerts JDK. После продления
 сертификата повторить `gen-certs.sh` и `docker compose restart movie oscar`.
 
 Оба сервиса доступны только по HTTPS: movie-service — `https://localhost:8443/movie-service`
