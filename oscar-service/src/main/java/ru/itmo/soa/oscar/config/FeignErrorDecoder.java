@@ -19,7 +19,7 @@ import java.util.concurrent.TimeoutException;
  * соединения.</p>
  *
  * <ul>
- *   <li>таймаут (SocketTimeoutException/TimeoutException/ReadTimeoutException) →
+ *   <li>таймаут (SocketTimeoutException/TimeoutException) →
  *       {@link MovieServiceGatewayTimeoutException} (HTTP 504);</li>
  *   <li>ошибка соединения (ConnectException) →
  *       {@link MovieServiceUnavailableException} (HTTP 503);</li>
@@ -47,8 +47,7 @@ public class FeignErrorDecoder implements ErrorDecoder {
     public RuntimeException decode(Throwable throwable) {
         Throwable cause = unwrap(throwable);
         if (cause instanceof SocketTimeoutException
-                || cause instanceof TimeoutException
-                || isNettyReadTimeout(cause)) {
+                || cause instanceof TimeoutException) {
             return new MovieServiceGatewayTimeoutException(
                     "Timeout while calling movie-service", throwable);
         }
@@ -58,11 +57,6 @@ public class FeignErrorDecoder implements ErrorDecoder {
         }
         return new MovieServiceBadGatewayException(
                 "Unexpected error while calling movie-service", throwable);
-    }
-
-    /** {@code ReadTimeoutException} из reactor-netty доступен опционально. */
-    private static boolean isNettyReadTimeout(Throwable cause) {
-        return "io.netty.handler.timeout.ReadTimeoutException".equals(cause.getClass().getName());
     }
 
     /**
