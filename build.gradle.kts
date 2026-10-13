@@ -6,7 +6,7 @@ plugins {
 }
 
 allprojects {
-    group = "ru.tbank.soa"
+    group = "ru.itmo.soa"
     version = "0.0.1-SNAPSHOT"
 }
 
