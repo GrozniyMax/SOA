@@ -133,6 +133,7 @@ async function submit() {
             id="mf-box"
             v-model="form.totalBoxOffice"
             placeholder="Не указано"
+            :decimals="2"
             :invalid="!!errors.totalBoxOffice"
             @update:model-value="clearError('totalBoxOffice')"
           />
@@ -155,7 +156,14 @@ async function submit() {
             <BaseInput id="mf-x" v-model="form.x" placeholder="12" :invalid="!!errors.x" @update:model-value="clearError('x')" />
           </FormField>
           <FormField label="Y" for-id="mf-y" :error="errors.y" hint="Дробное число" required>
-            <BaseInput id="mf-y" v-model="form.y" placeholder="3.5" :invalid="!!errors.y" @update:model-value="clearError('y')" />
+            <BaseInput
+              id="mf-y"
+              v-model="form.y"
+              placeholder="3.5"
+              :decimals="2"
+              :invalid="!!errors.y"
+              @update:model-value="clearError('y')"
+            />
           </FormField>
         </div>
       </section>

@@ -114,6 +114,7 @@ onMounted(() => {
           v-model="value"
           :type="inputType"
           :placeholder="placeholder"
+          :decimals="meta.kind === 'float' ? 2 : undefined"
           size="sm"
           :invalid="!!error"
         />

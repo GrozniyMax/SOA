@@ -3,7 +3,7 @@ import { ref, type Component } from 'vue'
 
 const model = defineModel<string>({ default: '' })
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     type?: 'text' | 'number' | 'date' | 'search'
     placeholder?: string
@@ -13,6 +13,7 @@ withDefaults(
     min?: string
     max?: string
     maxlength?: number
+    decimals?: number
     id?: string
     size?: 'md' | 'sm'
   }>(),
@@ -25,12 +26,40 @@ withDefaults(
     min: undefined,
     max: undefined,
     maxlength: undefined,
+    decimals: undefined,
     id: undefined,
     size: 'md',
   },
 )
 
 const inputRef = ref<HTMLInputElement | null>(null)
+
+function fractionLength(value: string): number {
+  return /[.,](\d*)/.exec(value)?.[1]?.length ?? 0
+}
+
+function trimFraction(value: string, digits: number): string {
+  return value.replace(/[.,]\d*/, (part) => part.slice(0, digits + 1))
+}
+
+function onInput(event: Event) {
+  const el = event.target as HTMLInputElement
+  const next = el.value
+  if (props.decimals !== undefined) {
+    const length = fractionLength(next)
+    const previous = fractionLength(model.value)
+    if (length > props.decimals && length > previous) {
+      const fixed =
+        next.length - model.value.length > 1 ? trimFraction(next, Math.max(props.decimals, previous)) : model.value
+      const caret = Math.min((el.selectionStart ?? next.length) - (next.length - fixed.length), fixed.length)
+      el.value = fixed
+      el.setSelectionRange(Math.max(caret, 0), Math.max(caret, 0))
+      model.value = fixed
+      return
+    }
+  }
+  model.value = next
+}
 
 defineExpose({ focus: () => inputRef.value?.focus() })
 </script>
@@ -41,7 +70,7 @@ defineExpose({ focus: () => inputRef.value?.focus() })
     <input
       :id="id"
       ref="inputRef"
-      v-model="model"
+      :value="model"
       :type="type"
       :placeholder="placeholder"
       :step="step"
@@ -50,6 +79,7 @@ defineExpose({ focus: () => inputRef.value?.focus() })
       :maxlength="maxlength"
       :aria-invalid="invalid || undefined"
       autocomplete="off"
+      @input="onInput"
     />
   </label>
 </template>
