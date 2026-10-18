@@ -3,3 +3,4 @@
 !oscar-service/build/libs/oscar.war
 !deploy/payara/
 !deploy/tomcat/
+!frontend/dist/

@@ -110,12 +110,14 @@ exception/    # глобальный @RestControllerAdvice → ApiError
 
 ## Развёртывание в контейнерах
 
-`deploy/docker-compose.yml` поднимает Postgres, movie-service на Payara Server 6.2025.4 (JDK 21)
-и oscar-service на Tomcat 10.1 (JDK 21). Перед запуском собираются оба WAR:
+`deploy/docker-compose.yml` поднимает Postgres, movie-service на Payara Server Web 6.2025.4 (JDK 21)
+и oscar-service на Tomcat 10.1 (JDK 21); фронт отдаёт тот же Tomcat из `webapps/ROOT`.
+Перед запуском собираются оба WAR и фронт:
 
 ```bash
 ./deploy/gen-certs.sh
 ./gradlew :movie-service:bootWar :oscar-service:bootWar
+VITE_MOVIE_API=https://HOST:8443/movie-service VITE_OSCAR_API=/oscar npm --prefix frontend run build
 cp deploy/.env.example deploy/.env
 docker compose -f deploy/docker-compose.yml up -d --build
 ```
@@ -136,7 +138,7 @@ DOMAIN=64-188-64-15.sslip.io ./deploy/gen-certs.sh
 ```
 MOVIE_SERVICE_URL=https://64-188-64-15.sslip.io:8443/movie-service
 MOVIE_SERVICE_TRUSTSTORE=
-CORS_ALLOWED_ORIGINS=https://64-188-64-15.sslip.io:4173
+CORS_ALLOWED_ORIGINS=https://64-188-64-15.sslip.io:8444
 ```
 
 Пустой `MOVIE_SERVICE_TRUSTSTORE` — Feign-клиент доверяет стандартному cacerts JDK. После продления
@@ -149,9 +151,12 @@ oscar-service — `https://localhost:8444/oscar` (в `deploy/tomcat/server.xml` 
 Порты на хосте задаются в `deploy/.env` (`MOVIE_PORT`, `OSCAR_PORT`), пароль БД — `DB_PASSWORD`,
 пароль keystore — `KEYSTORE_PASSWORD`, адрес фронта для CORS — `CORS_ALLOWED_ORIGINS`.
 
-Фронт по HTTPS: `cp frontend/.env.production.example frontend/.env.production`, указать адреса API, затем
-`npm --prefix frontend run build && npm --prefix frontend run preview` → `https://localhost:4173`.
+Фронт открывается по `https://HOST:8444/` (тот же адрес, что у oscar-service, поэтому `VITE_OSCAR_API=/oscar`).
 В браузере нужно один раз открыть адреса обоих сервисов и принять самоподписанные сертификаты.
+
+Для слабых серверов память ограничена: `_JAVA_OPTIONS` (`MOVIE_JAVA_OPTIONS`, `OSCAR_JAVA_OPTIONS` в `deploy/.env`)
+и `mem_limit` у контейнеров, у Postgres — `shared_buffers=32MB`, в Payara выключен Hazelcast,
+у Tomcat `maxThreads="20"`.
 
 Особенности Payara:
 - нужен образ с JDK 21 (`-jdk21`): образ по умолчанию работает на Java 11, а сервис собран под 21;

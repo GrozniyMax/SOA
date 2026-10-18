@@ -9,7 +9,8 @@
                protocol="org.apache.coyote.http11.Http11NioProtocol"
                SSLEnabled="true"
                scheme="https"
-               secure="true">
+               secure="true"
+               maxThreads="20">
       <SSLHostConfig>
         <Certificate certificateKeystoreFile="/certs/oscar.p12"
                      certificateKeystoreType="PKCS12"
