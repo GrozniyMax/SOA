@@ -23,7 +23,10 @@ import ru.itmo.soa.oscar.repository.dao.OscarDao;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toSet;
@@ -32,9 +35,13 @@ import static java.util.stream.Collectors.toSet;
 @RequiredArgsConstructor
 public class OscarServiceImpl implements OscarService {
 
-    /** Размер страницы при постраничной выборке фильмов из movie-service. */
+    /**
+     * Размер страницы при постраничной выборке фильмов из movie-service.
+     */
     private static final int SEARCH_PAGE_SIZE = 100;
-    /** Стабильный порядок выборки для детерминированного разбиения на пачки. */
+    /**
+     * Стабильный порядок выборки для детерминированного разбиения на пачки.
+     */
     private static final String SEARCH_SORT = "id:asc";
 
     private final OscarDao dao;
@@ -44,8 +51,7 @@ public class OscarServiceImpl implements OscarService {
     @Override
     public PageResult<Operator> getLosers(int page, int size) {
         Set<Long> awardedFilmIds = searchAll(List.of(
-                        new MovieFilter().path(MovieFieldPath.OSCARS_COUNT).value("0").comparator(Comparator.GT)))
-                .stream()
+                new MovieFilter().path(MovieFieldPath.OSCARS_COUNT).value("0").comparator(Comparator.GT)))
                 .map(Movie::getId)
                 .map(Long::valueOf)
                 .collect(toSet());
@@ -55,10 +61,8 @@ public class OscarServiceImpl implements OscarService {
     @Override
     public HumiliationResult humiliateDirectorsByGenre(MovieGenre genre) {
         Set<String> directors = searchAll(List.of(
-                        new MovieFilter().path(MovieFieldPath.GENRE).value(genre.name()).comparator(Comparator.EQ)))
-                .stream()
+                new MovieFilter().path(MovieFieldPath.GENRE).value(genre.name()).comparator(Comparator.EQ)))
                 .map(Movie::getDirector)
-                .filter(d -> d != null && d.getName() != null)
                 .map(Person::getName)
                 .collect(toCollection(LinkedHashSet::new));
         if (directors.isEmpty()) {
@@ -73,11 +77,11 @@ public class OscarServiceImpl implements OscarService {
             List<String> chunk = ordered.subList(from, Math.min(from + batchSize, ordered.size()));
             DirectorsHumiliationResult result = moviesApi.humiliateDirectors(
                     new DirectorsHumiliateRequest().directors(new ArrayList<>(chunk)));
-            if (result == null || result.getResults() == null) {
+            if (result == null) {
                 continue;
             }
             for (DirectorsHumiliation humiliation : result.getResults()) {
-                int revoked = humiliation.getRevokedOscars() == null ? 0 : humiliation.getRevokedOscars();
+                int revoked = humiliation.getRevokedOscars();
                 revokedOscars += revoked;
                 if (revoked > 0) {
                     affectedDirectors++;
@@ -89,26 +93,29 @@ public class OscarServiceImpl implements OscarService {
     }
 
     /**
-     * Обходит все страницы выборки movie-service, пока не прочитаны все элементы
-     * (условие остановки, как раньше: пока {@code (page + 1) * size < total}).
+     * Лениво обходит все страницы выборки movie-service; количество страниц
+     * вычисляется по {@code total} из первого ответа, как раньше
+     * (условие остановки: {@code (page + 1) * size >= total}).
      */
-    private List<Movie> searchAll(List<MovieFilter> filters) {
-        List<Movie> items = new ArrayList<>();
-        int page = 0;
-        while (true) {
-            MoviePage response = moviesApi.searchMovies(new MovieSearchRequest()
-                    .filters(filters)
-                    .sort(SEARCH_SORT)
-                    .page(page)
-                    .size(SEARCH_PAGE_SIZE));
-            if (response == null || response.getItems() == null || response.getItems().isEmpty()) {
-                return items;
-            }
-            items.addAll(response.getItems());
-            if ((long) (page + 1) * SEARCH_PAGE_SIZE >= response.getTotal()) {
-                return items;
-            }
-            page++;
+    private Stream<Movie> searchAll(List<MovieFilter> filters) {
+        MoviePage first = fetchPage(filters, 0);
+        if (first == null || first.getItems().isEmpty()) {
+            return Stream.empty();
         }
+        long pages = (first.getTotal() + SEARCH_PAGE_SIZE - 1) / SEARCH_PAGE_SIZE;
+        return Stream.concat(
+                first.getItems().stream(),
+                IntStream.rangeClosed(1, (int) pages - 1)
+                        .mapToObj(page -> fetchPage(filters, page))
+                        .filter(Objects::nonNull)
+                        .flatMap(response -> response.getItems().stream()));
+    }
+
+    private MoviePage fetchPage(List<MovieFilter> filters, int page) {
+        return moviesApi.searchMovies(new MovieSearchRequest()
+                .filters(filters)
+                .sort(SEARCH_SORT)
+                .page(page)
+                .size(SEARCH_PAGE_SIZE));
     }
 }
