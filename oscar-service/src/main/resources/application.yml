@@ -10,7 +10,9 @@ spring:
     open-in-view: false
 
 server:
-  port: 8081
+  # Порт параметризуем локально (env > yml): remote-источник из config-repo
+  # из-за override-none имеет НИЗШИЙ приоритет и порт из env не пробросит.
+  port: ${OSCAR_PORT:8081}
   servlet:
     context-path: /oscar
 
