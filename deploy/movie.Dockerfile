@@ -1,5 +1,9 @@
-FROM payara/server-web:6.2025.4-jdk21
+# movie-service: исполняемый boot-jar (Boot 3.5 / Java 21), внутренний plain HTTP :8080.
+# Снаружи доступен только через api-gateway — порт наружу не публикуется.
+FROM eclipse-temurin:21-jre
 
-COPY deploy/payara/import-cert.sh ${SCRIPT_DIR}/init.d/import-cert.sh
-COPY deploy/payara/pre-boot-commands.asadmin ${PREBOOT_COMMANDS}
-COPY movie-service/build/libs/movie-service.war ${DEPLOY_DIR}/movie-service.war
+WORKDIR /app
+COPY movie-service/build/libs/movie-service.jar /app/movie-service.jar
+
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "/app/movie-service.jar"]
