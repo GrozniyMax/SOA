@@ -1,15 +1,24 @@
 package ru.itmo.soa.oscar.domain;
 
+import lombok.AllArgsConstructor;
+import lombok.Value;
+
 import java.util.List;
 
 /**
  * Универсальный результат пагинации.
  *
- * @param items список элементов страницы
- * @param total общее количество элементов
- * @param page  номер страницы
- * @param size  размер страницы
- * @param <T>   тип элементов
+ * <p>Была record; переписана в immutable-класс (Java 11) в стиле Lombok {@code @Value}.</p>
  */
-public record PageResult<T>(List<T> items, long total, int page, int size) {
+@Value
+@AllArgsConstructor
+public class PageResult<T> {
+
+    List<T> items;
+
+    long total;
+
+    int page;
+
+    int size;
 }

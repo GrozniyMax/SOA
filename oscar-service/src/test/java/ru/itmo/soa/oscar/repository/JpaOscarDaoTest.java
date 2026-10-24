@@ -58,9 +58,9 @@ class JpaOscarDaoTest {
 
         PageResult<Operator> losers = dao.findLosers(Set.of(200L), 0, 10);
 
-        assertThat(losers.total()).isEqualTo(3);
-        assertThat(losers.items())
-                .extracting(Operator::name)
+        assertThat(losers.getTotal()).isEqualTo(3);
+        assertThat(losers.getItems())
+                .extracting(Operator::getName)
                 .containsExactly("NoFilms", "NoOscars", "MissingFilm");
     }
 
@@ -72,7 +72,7 @@ class JpaOscarDaoTest {
 
         PageResult<Operator> losers = dao.findLosers(List.of(), 0, 10);
 
-        assertThat(losers.total()).isEqualTo(2);
+        assertThat(losers.getTotal()).isEqualTo(2);
     }
 
     @Test
@@ -84,10 +84,10 @@ class JpaOscarDaoTest {
         filmOf(winner, 1L);
 
         PageResult<Operator> first = dao.findLosers(Set.of(1L), 0, 2);
-        assertThat(first.total()).isEqualTo(5);
-        assertThat(first.items()).extracting(Operator::name).containsExactly("Loser0", "Loser1");
+        assertThat(first.getTotal()).isEqualTo(5);
+        assertThat(first.getItems()).extracting(Operator::getName).containsExactly("Loser0", "Loser1");
 
         PageResult<Operator> last = dao.findLosers(Set.of(1L), 2, 2);
-        assertThat(last.items()).extracting(Operator::name).containsExactly("Loser4");
+        assertThat(last.getItems()).extracting(Operator::getName).containsExactly("Loser4");
     }
 }

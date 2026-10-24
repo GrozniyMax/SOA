@@ -1,25 +1,21 @@
 package ru.itmo.soa.movie.config;
 
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * Настройки movie-service (префикс {@code soa.movie}).
+ *
+ * <p>Была record с компактным конструктором; в Boot 2.3 привязка JavaBean,
+ * дефолты задаются значениями полей.</p>
  */
+@Data
 @ConfigurationProperties(prefix = "soa.movie")
-public record MovieProperties(
-        int defaultPageSize,
-        int maxPageSize,
-        int taglineMaxLength) {
+public class MovieProperties {
 
-    public MovieProperties {
-        if (defaultPageSize <= 0) {
-            defaultPageSize = 20;
-        }
-        if (maxPageSize <= 0) {
-            maxPageSize = 100;
-        }
-        if (taglineMaxLength <= 0) {
-            taglineMaxLength = 181;
-        }
-    }
+    private int defaultPageSize = 20;
+
+    private int maxPageSize = 100;
+
+    private int taglineMaxLength = 181;
 }

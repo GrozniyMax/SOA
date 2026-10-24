@@ -51,6 +51,6 @@ public interface MovieApiMapper {
     default ru.itmo.soa.movie.dto.DirectorsHumiliationResult toDirectorsHumiliationResult(
             List<DirectorsHumiliation> humiliations) {
         return new ru.itmo.soa.movie.dto.DirectorsHumiliationResult(
-                humiliations.stream().map(this::toDto).toList());
+                humiliations.stream().map(this::toDto).collect(java.util.stream.Collectors.toList()));
     }
 }

@@ -1,6 +1,6 @@
 package ru.itmo.soa.oscar.exception;
 
-import jakarta.validation.ConstraintViolationException;
+import javax.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

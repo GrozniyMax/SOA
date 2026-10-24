@@ -3,9 +3,9 @@ package ru.itmo.soa.movie.controller;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.itmo.soa.movie.controller.mapper.MovieApiMapperImpl;
 import ru.itmo.soa.movie.domain.Coordinates;
@@ -36,7 +36,7 @@ class MoviesApiControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockitoBean
+    @MockBean
     private MovieService service;
 
     @Test
@@ -47,10 +47,9 @@ class MoviesApiControllerTest {
 
         mockMvc.perform(post("/movies")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name":"Inception","coordinates":{"x":1,"y":2.5},"genre":"ACTION",
-                                 "oscarsCount":2,"tagline":"dream","director":{"name":"Nolan","eyeColor":"BLUE"}}
-                                """))
+                        .content("{\"name\":\"Inception\",\"coordinates\":{\"x\":1,\"y\":2.5},"
+                                + "\"genre\":\"ACTION\",\"oscarsCount\":2,\"tagline\":\"dream\","
+                                + "\"director\":{\"name\":\"Nolan\",\"eyeColor\":\"BLUE\"}}"))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "/movies/5"))
                 .andExpect(jsonPath("$.id").value(5))
@@ -61,10 +60,8 @@ class MoviesApiControllerTest {
     void addMovieReturns422ForBlankName() throws Exception {
         mockMvc.perform(post("/movies")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name":"","coordinates":{"x":1,"y":2.5},"genre":"ACTION",
-                                 "director":{"name":"Nolan"}}
-                                """))
+                        .content("{\"name\":\"\",\"coordinates\":{\"x\":1,\"y\":2.5},"
+                                + "\"genre\":\"ACTION\",\"director\":{\"name\":\"Nolan\"}}"))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.status").value(422));
     }
@@ -85,9 +82,7 @@ class MoviesApiControllerTest {
 
         mockMvc.perform(post("/movies/search")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"filters":[{"path":"oscarsCount","value":"abc","comparator":"gt"}]}
-                                """))
+                        .content("{\"filters\":[{\"path\":\"oscarsCount\",\"value\":\"abc\",\"comparator\":\"gt\"}]}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message").value("invalid value 'abc' for filter oscarsCount"));
@@ -101,9 +96,7 @@ class MoviesApiControllerTest {
 
         mockMvc.perform(post("/movies/directors/humiliate")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"directors":["Nolan","Kubrick"]}
-                                """))
+                        .content("{\"directors\":[\"Nolan\",\"Kubrick\"]}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.results.length()").value(2))
                 .andExpect(jsonPath("$.results[0].director").value("Nolan"))
@@ -116,9 +109,7 @@ class MoviesApiControllerTest {
     void humiliateDirectorsReturns400ForEmptyDirectorsArray() throws Exception {
         mockMvc.perform(post("/movies/directors/humiliate")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"directors":[]}
-                                """))
+                        .content("{\"directors\":[]}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400));
     }

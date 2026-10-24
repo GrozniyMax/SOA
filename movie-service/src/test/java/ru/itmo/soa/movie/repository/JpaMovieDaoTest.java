@@ -1,7 +1,7 @@
 package ru.itmo.soa.movie.repository;
 
 import org.junit.jupiter.api.Test;
-import jakarta.persistence.EntityManager;
+import javax.persistence.EntityManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
@@ -66,22 +66,22 @@ class JpaMovieDaoTest {
     void saveCreatesMovieWithGeneratedId() {
         Movie saved = dao.save(movie("Inception", "dream", MovieGenre.ACTION, "Nolan"));
 
-        assertThat(saved.id()).isPositive();
-        assertThat(saved.name()).isEqualTo("Inception");
-        assertThat(saved.coordinates().x()).isEqualTo(1);
-        assertThat(saved.coordinates().y()).isEqualTo(2.5f);
-        assertThat(saved.director().name()).isEqualTo("Nolan");
-        assertThat(dao.existsById(saved.id())).isTrue();
+        assertThat(saved.getId()).isPositive();
+        assertThat(saved.getName()).isEqualTo("Inception");
+        assertThat(saved.getCoordinates().getX()).isEqualTo(1);
+        assertThat(saved.getCoordinates().getY()).isEqualTo(2.5f);
+        assertThat(saved.getDirector().getName()).isEqualTo("Nolan");
+        assertThat(dao.existsById(saved.getId())).isTrue();
     }
 
     @Test
     void saveWithExistingIdUpdates() {
         Movie created = dao.save(movie("Old", "tag", MovieGenre.DRAMA, "Director"));
         Movie update = new Movie(
-                created.id(),
+                created.getId(),
                 "New",
                 new Coordinates(9, 9.9f),
-                created.creationDate(),
+                created.getCreationDate(),
                 5,
                 null,
                 null,
@@ -90,19 +90,19 @@ class JpaMovieDaoTest {
 
         Movie updated = dao.save(update);
 
-        assertThat(updated.id()).isEqualTo(created.id());
-        assertThat(updated.name()).isEqualTo("New");
-        assertThat(updated.genre()).isEqualTo(MovieGenre.FANTASY);
-        assertThat(dao.findById(created.id()).orElseThrow().name()).isEqualTo("New");
+        assertThat(updated.getId()).isEqualTo(created.getId());
+        assertThat(updated.getName()).isEqualTo("New");
+        assertThat(updated.getGenre()).isEqualTo(MovieGenre.FANTASY);
+        assertThat(dao.findById(created.getId()).orElseThrow().getName()).isEqualTo("New");
     }
 
     @Test
     void findByIdAndDelete() {
         Movie saved = dao.save(movie("A", "t", MovieGenre.ACTION, "D"));
 
-        assertThat(dao.findById(saved.id())).isPresent();
-        dao.deleteById(saved.id());
-        assertThat(dao.findById(saved.id())).isEmpty();
+        assertThat(dao.findById(saved.getId())).isPresent();
+        dao.deleteById(saved.getId());
+        assertThat(dao.findById(saved.getId())).isEmpty();
     }
 
     @Test
@@ -114,7 +114,7 @@ class JpaMovieDaoTest {
         Optional<Movie> max = dao.findWithMaxTagline();
 
         assertThat(max).isPresent();
-        assertThat(max.get().tagline()).isEqualTo("zzz");
+        assertThat(max.get().getTagline()).isEqualTo("zzz");
     }
 
     @Test
@@ -126,12 +126,12 @@ class JpaMovieDaoTest {
         PageResult<Movie> action = dao.search(new MovieSearchCriteria(
                 List.of(new Filter(MovieFieldPath.GENRE, "ACTION", FilterComparator.EQ)),
                 "name:asc", 0, 10));
-        assertThat(action.total()).isEqualTo(2);
+        assertThat(action.getTotal()).isEqualTo(2);
 
         PageResult<Movie> nolan = dao.search(new MovieSearchCriteria(
                 List.of(new Filter(MovieFieldPath.DIRECTOR_NAME, "Nolan", FilterComparator.SUBSTRING)),
                 "name:asc", 0, 10));
-        assertThat(nolan.total()).isEqualTo(3);
+        assertThat(nolan.getTotal()).isEqualTo(3);
 
         Movie heavy = new Movie(0L, "OscarHeavy",
                 new Coordinates(1, 1f), LocalDate.of(2020, 1, 1), 5, 100f,
@@ -141,8 +141,8 @@ class JpaMovieDaoTest {
         PageResult<Movie> oscarHeavy = dao.search(new MovieSearchCriteria(
                 List.of(new Filter(MovieFieldPath.OSCARS_COUNT, "3", FilterComparator.GT)),
                 "name:asc", 0, 10));
-        assertThat(oscarHeavy.total()).isEqualTo(1);
-        assertThat(oscarHeavy.items().get(0).name()).isEqualTo("OscarHeavy");
+        assertThat(oscarHeavy.getTotal()).isEqualTo(1);
+        assertThat(oscarHeavy.getItems().get(0).getName()).isEqualTo("OscarHeavy");
     }
 
     @Test
@@ -153,12 +153,12 @@ class JpaMovieDaoTest {
         PageResult<Movie> byDirector = dao.search(new MovieSearchCriteria(
                 List.of(new Filter(MovieFieldPath.DIRECTOR_NAME, "nOLAN", FilterComparator.SUBSTRING)),
                 null, 0, 10));
-        assertThat(byDirector.items()).extracting(Movie::name).containsExactly("Inception");
+        assertThat(byDirector.getItems()).extracting(Movie::getName).containsExactly("Inception");
 
         PageResult<Movie> byTagline = dao.search(new MovieSearchCriteria(
                 List.of(new Filter(MovieFieldPath.TAGLINE, "dream w", FilterComparator.SUBSTRING)),
                 null, 0, 10));
-        assertThat(byTagline.items()).extracting(Movie::name).containsExactly("Inception");
+        assertThat(byTagline.getItems()).extracting(Movie::getName).containsExactly("Inception");
     }
 
     @Test
@@ -170,11 +170,11 @@ class JpaMovieDaoTest {
 
         PageResult<Movie> percent = dao.search(new MovieSearchCriteria(
                 List.of(new Filter(MovieFieldPath.NAME, "0%", FilterComparator.SUBSTRING)), null, 0, 10));
-        assertThat(percent.items()).extracting(Movie::name).containsExactly("100% Love");
+        assertThat(percent.getItems()).extracting(Movie::getName).containsExactly("100% Love");
 
         PageResult<Movie> underscore = dao.search(new MovieSearchCriteria(
                 List.of(new Filter(MovieFieldPath.NAME, "e_c", FilterComparator.SUBSTRING)), null, 0, 10));
-        assertThat(underscore.items()).extracting(Movie::name).containsExactly("snake_case");
+        assertThat(underscore.getItems()).extracting(Movie::getName).containsExactly("snake_case");
     }
 
     @Test
@@ -186,8 +186,8 @@ class JpaMovieDaoTest {
         PageResult<Movie> all = dao.search(new MovieSearchCriteria(
                 List.of(), "name:desc", 0, 10));
 
-        assertThat(all.total()).isEqualTo(3);
-        assertThat(all.items().get(0).name()).isEqualTo("C");
+        assertThat(all.getTotal()).isEqualTo(3);
+        assertThat(all.getItems().get(0).getName()).isEqualTo("C");
     }
 
     @Test
@@ -198,8 +198,8 @@ class JpaMovieDaoTest {
 
         PageResult<Movie> result = dao.findByDirectorGreaterThan("B", 0, 10);
 
-        assertThat(result.total()).isEqualTo(2);
-        assertThat(result.items()).extracting(Movie::name)
+        assertThat(result.getTotal()).isEqualTo(2);
+        assertThat(result.getItems()).extracting(Movie::getName)
                 .containsExactlyInAnyOrder("B", "C");
     }
 
@@ -212,8 +212,8 @@ class JpaMovieDaoTest {
 
         PageResult<MovieGenre> genres = dao.findUniqueGenres(0, 2);
 
-        assertThat(genres.total()).isEqualTo(3);
-        assertThat(genres.items()).hasSize(2);
+        assertThat(genres.getTotal()).isEqualTo(3);
+        assertThat(genres.getItems()).hasSize(2);
     }
 
     @Test
@@ -228,13 +228,13 @@ class JpaMovieDaoTest {
         assertThat(coords).isPresent();
         assertThat(coords.orElseThrow().getRefCount()).isEqualTo(2);
 
-        dao.deleteById(a.id());
+        dao.deleteById(a.getId());
         assertThat(coordinatesRepository.findByXAndY(1, 2.5f))
                 .get()
                 .extracting(CoordinatesEntity::getRefCount)
                 .isEqualTo(1);
 
-        dao.deleteById(b.id());
+        dao.deleteById(b.getId());
         assertThat(coordinatesRepository.findByXAndY(1, 2.5f)).isEmpty();
         assertThat(coordinatesRepository.count()).isEqualTo(initialCount);
     }
@@ -266,9 +266,9 @@ class JpaMovieDaoTest {
                 new DirectorsHumiliation("Villeneuve", 0));
         // Массовый UPDATE идёт мимо контекста персистентности — сбрасываем кэш первого уровня.
         entityManager.clear();
-        assertThat(dao.findById(nolanA.id()).orElseThrow().oscarsCount()).isNull();
-        assertThat(dao.findById(nolanB.id()).orElseThrow().oscarsCount()).isNull();
-        assertThat(dao.findById(kubrick.id()).orElseThrow().oscarsCount()).isEqualTo(2);
+        assertThat(dao.findById(nolanA.getId()).orElseThrow().getOscarsCount()).isNull();
+        assertThat(dao.findById(nolanB.getId()).orElseThrow().getOscarsCount()).isNull();
+        assertThat(dao.findById(kubrick.getId()).orElseThrow().getOscarsCount()).isEqualTo(2);
     }
 
     @Test
@@ -284,7 +284,7 @@ class JpaMovieDaoTest {
                 new DirectorsHumiliation("Nolan", 4),
                 new DirectorsHumiliation("Nolan", 4));
         entityManager.clear();
-        assertThat(dao.findById(nolanA.id()).orElseThrow().oscarsCount()).isNull();
-        assertThat(dao.findById(nolanB.id()).orElseThrow().oscarsCount()).isNull();
+        assertThat(dao.findById(nolanA.getId()).orElseThrow().getOscarsCount()).isNull();
+        assertThat(dao.findById(nolanB.getId()).orElseThrow().getOscarsCount()).isNull();
     }
 }

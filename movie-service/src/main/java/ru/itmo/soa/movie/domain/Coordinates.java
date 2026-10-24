@@ -1,10 +1,18 @@
 package ru.itmo.soa.movie.domain;
 
+import lombok.AllArgsConstructor;
+import lombok.Value;
+
 /**
  * Координаты фильма (значение-объект).
  *
- * @param x координата x (обязательна)
- * @param y координата y (обязательна)
+ * <p>Была record; переписана в immutable-класс (Java 11) в стиле Lombok {@code @Value}.</p>
  */
-public record Coordinates(int x, float y) {
+@Value
+@AllArgsConstructor
+public class Coordinates {
+
+    int x;
+
+    float y;
 }

@@ -1,14 +1,24 @@
 package ru.itmo.soa.movie.domain;
 
+import lombok.AllArgsConstructor;
+import lombok.Value;
+
 import java.time.LocalDate;
 
 /**
  * Персона (режиссёр фильма) — значение-объект.
  *
- * @param name     имя (обязательно, не пустое)
- * @param birthday дата рождения (может отсутствовать)
- * @param eyeColor цвет глаз (может отсутствовать)
- * @param hairColor цвет волос (может отсутствовать)
+ * <p>Была record; переписана в immutable-класс (Java 11) в стиле Lombok {@code @Value}.</p>
  */
-public record Person(String name, LocalDate birthday, EyeColor eyeColor, HairColor hairColor) {
+@Value
+@AllArgsConstructor
+public class Person {
+
+    String name;
+
+    LocalDate birthday;
+
+    EyeColor eyeColor;
+
+    HairColor hairColor;
 }

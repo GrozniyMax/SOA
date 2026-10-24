@@ -47,7 +47,7 @@ class MovieServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        service = new MovieServiceImpl(dao, new MovieProperties(20, 100, 181));
+        service = new MovieServiceImpl(dao, new MovieProperties());
     }
 
     private static Movie movie() {
@@ -66,8 +66,8 @@ class MovieServiceImplTest {
         ArgumentCaptor<Movie> captor = ArgumentCaptor.forClass(Movie.class);
         verify(dao).save(captor.capture());
         Movie saved = captor.getValue();
-        assertThat(saved.id()).isZero();
-        assertThat(saved.creationDate()).isEqualTo(LocalDate.now());
+        assertThat(saved.getId()).isZero();
+        assertThat(saved.getCreationDate()).isEqualTo(LocalDate.now());
         assertThat(result).isEqualTo(saved);
     }
 
@@ -113,10 +113,10 @@ class MovieServiceImplTest {
 
         ArgumentCaptor<Movie> captor = ArgumentCaptor.forClass(Movie.class);
         verify(dao).save(captor.capture());
-        assertThat(captor.getValue().id()).isEqualTo(7L);
-        assertThat(captor.getValue().creationDate()).isEqualTo(LocalDate.of(2010, 6, 6));
-        assertThat(captor.getValue().name()).isEqualTo("Inception");
-        assertThat(updated.id()).isEqualTo(7L);
+        assertThat(captor.getValue().getId()).isEqualTo(7L);
+        assertThat(captor.getValue().getCreationDate()).isEqualTo(LocalDate.of(2010, 6, 6));
+        assertThat(captor.getValue().getName()).isEqualTo("Inception");
+        assertThat(updated.getId()).isEqualTo(7L);
     }
 
     @Test

@@ -13,6 +13,7 @@ import ru.itmo.soa.oscar.repository.jpa.OperatorJpaRepository;
 import ru.itmo.soa.oscar.repository.mapper.OscarEntityMapper;
 
 import java.util.Collection;
+import java.util.stream.Collectors;
 import java.util.List;
 
 @Repository
@@ -31,7 +32,7 @@ public class JpaOscarDao implements OscarDao {
         Page<OperatorEntity> result = awardedFilmIds == null || awardedFilmIds.isEmpty()
                 ? operatorRepository.findAll(pageable)
                 : operatorRepository.findWithoutFilms(awardedFilmIds, pageable);
-        List<Operator> items = result.getContent().stream().map(mapper::toDomain).toList();
+        List<Operator> items = result.getContent().stream().map(mapper::toDomain).collect(Collectors.toList());
         return new PageResult<>(items, result.getTotalElements(), safePage, safeSize);
     }
 }

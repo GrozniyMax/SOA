@@ -16,11 +16,11 @@ public class CorsConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        if (props.allowedOrigins().isEmpty()) {
+        if (props.getAllowedOrigins().isEmpty()) {
             return;
         }
         registry.addMapping("/**")
-                .allowedOrigins(props.allowedOrigins().toArray(String[]::new))
+                .allowedOrigins(props.getAllowedOrigins().toArray(String[]::new))
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .exposedHeaders(HttpHeaders.LOCATION);

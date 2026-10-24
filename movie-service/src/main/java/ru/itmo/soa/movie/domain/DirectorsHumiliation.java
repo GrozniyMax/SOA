@@ -1,10 +1,18 @@
 package ru.itmo.soa.movie.domain;
 
+import lombok.AllArgsConstructor;
+import lombok.Value;
+
 /**
  * Количество Оскаров, отозванных у фильмов одного режиссёра.
  *
- * @param director      имя режиссёра
- * @param revokedOscars суммарное количество отозванных Оскаров
+ * <p>Была record; переписана в immutable-класс (Java 11) в стиле Lombok {@code @Value}.</p>
  */
-public record DirectorsHumiliation(String director, int revokedOscars) {
+@Value
+@AllArgsConstructor
+public class DirectorsHumiliation {
+
+    String director;
+
+    int revokedOscars;
 }

@@ -20,7 +20,13 @@ subprojects {
     // Единый BOM для всего проекта — в модулях не дублируется.
     configure<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension> {
         imports {
+            // Плагин dependency-management не раскрывает цепочку импортов BOM'ов,
+            // поэтому spring-boot-dependencies (Boot 2.3.12) импортируем явно.
+            mavenBom("org.springframework.boot:spring-boot-dependencies:2.3.12.RELEASE")
             mavenBom("org.springframework.cloud:spring-cloud-dependencies:Hoxton.SR12")
+            // Hoxton пинит feign 10.12 через вложенный feign-bom (цепочка импортов,
+            // которую плагин не раскрывает) — импортируем явно, иначе feign уедет в 13.x.
+            mavenBom("io.github.openfeign:feign-bom:10.12")
         }
     }
 
@@ -36,6 +42,12 @@ subprojects {
 
     tasks.withType<Test> {
         useJUnitPlatform()
+    }
+
+    // Аналог record-компонентов: имена параметров конструкторов нужны MapStruct
+    // (конструкторный маппинг immutable-классов) и Spring MVC для @RequestParam.
+    tasks.withType<JavaCompile>().configureEach {
+        options.compilerArgs.add("-parameters")
     }
 
     // Hoxton пинит gson 2.1, но eureka-client требует GsonBuilder.setLenient (2.2+).

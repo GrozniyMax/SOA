@@ -82,14 +82,14 @@ class FeignErrorDecoderTest {
         assertThat(e.getMessage()).contains("500").contains("MoviesApi#getMovie").contains("oops");
     }
 
-    /** Как Feign заворачивает транспортные IOException при OkHttp-стеке (feign 13.x). */
+    /** Как Feign заворачивает транспортные IOException при OkHttp-стеке (feign 10.x, Hoxton). */
     private static RetryableException retryable(Throwable cause) {
         return new RetryableException(
                 -1,
                 cause.getMessage(),
                 Request.HttpMethod.GET,
                 cause,
-                (Long) null,
+                (java.util.Date) null,
                 Request.create(Request.HttpMethod.GET, "/movies/1", java.util.Map.of(), null, null, null));
     }
 }

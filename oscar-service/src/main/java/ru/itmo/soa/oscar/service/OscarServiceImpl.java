@@ -2,7 +2,6 @@ package ru.itmo.soa.oscar.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.itmo.soa.movie.client.MoviesApi;
 import ru.itmo.soa.movie.dto.Comparator;
 import ru.itmo.soa.movie.dto.DirectorsHumiliateRequest;
 import ru.itmo.soa.movie.dto.DirectorsHumiliation;
@@ -13,6 +12,7 @@ import ru.itmo.soa.movie.dto.MovieFilter;
 import ru.itmo.soa.movie.dto.MoviePage;
 import ru.itmo.soa.movie.dto.MovieSearchRequest;
 import ru.itmo.soa.movie.dto.Person;
+import ru.itmo.soa.oscar.client.MovieServiceFeignClient;
 import ru.itmo.soa.oscar.config.HumiliateProperties;
 import ru.itmo.soa.oscar.domain.HumiliationResult;
 import ru.itmo.soa.oscar.domain.MovieGenre;
@@ -45,7 +45,7 @@ public class OscarServiceImpl implements OscarService {
     private static final String SEARCH_SORT = "id:asc";
 
     private final OscarDao dao;
-    private final MoviesApi moviesApi;
+    private final MovieServiceFeignClient moviesApi;
     private final HumiliateProperties humiliateProperties;
 
     @Override
@@ -69,7 +69,7 @@ public class OscarServiceImpl implements OscarService {
             return new HumiliationResult(genre, 0, 0);
         }
 
-        int batchSize = Math.max(1, humiliateProperties.batchSize());
+        int batchSize = Math.max(1, humiliateProperties.getBatchSize());
         List<String> ordered = new ArrayList<>(directors);
         int affectedDirectors = 0;
         int revokedOscars = 0;

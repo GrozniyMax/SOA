@@ -32,15 +32,29 @@ public enum MovieFieldPath {
     }
 
     public Object parse(String value) {
-        return switch (this) {
-            case ID -> Long.parseLong(value);
-            case OSCARS_COUNT, COORDINATES_X -> Integer.parseInt(value);
-            case COORDINATES_Y, TOTAL_BOX_OFFICE -> Float.parseFloat(value);
-            case CREATION_DATE, DIRECTOR_BIRTHDAY -> LocalDate.parse(value);
-            case GENRE -> MovieGenre.valueOf(value);
-            case DIRECTOR_EYE_COLOR -> EyeColor.valueOf(value);
-            case DIRECTOR_HAIR_COLOR -> HairColor.valueOf(value);
-            case NAME, TAGLINE, DIRECTOR_NAME -> value;
-        };
+        switch (this) {
+            case ID:
+                return Long.parseLong(value);
+            case OSCARS_COUNT:
+            case COORDINATES_X:
+                return Integer.parseInt(value);
+            case COORDINATES_Y:
+            case TOTAL_BOX_OFFICE:
+                return Float.parseFloat(value);
+            case CREATION_DATE:
+            case DIRECTOR_BIRTHDAY:
+                return LocalDate.parse(value);
+            case GENRE:
+                return MovieGenre.valueOf(value);
+            case DIRECTOR_EYE_COLOR:
+                return EyeColor.valueOf(value);
+            case DIRECTOR_HAIR_COLOR:
+                return HairColor.valueOf(value);
+            case NAME:
+            case TAGLINE:
+            case DIRECTOR_NAME:
+            default:
+                return value;
+        }
     }
 }

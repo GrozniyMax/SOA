@@ -1,11 +1,20 @@
 package ru.itmo.soa.movie.domain;
 
+import lombok.AllArgsConstructor;
+import lombok.Value;
+
 /**
  * Один фильтр динамического поиска.
  *
- * @param path       путь к полю сущности
- * @param value      значение фильтра (строка)
- * @param comparator оператор сравнения
+ * <p>Была record; переписана в immutable-класс (Java 11) в стиле Lombok {@code @Value}.</p>
  */
-public record Filter(MovieFieldPath path, String value, FilterComparator comparator) {
+@Value
+@AllArgsConstructor
+public class Filter {
+
+    MovieFieldPath path;
+
+    String value;
+
+    FilterComparator comparator;
 }

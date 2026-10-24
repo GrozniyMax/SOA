@@ -11,12 +11,10 @@ import java.util.Collection;
 
 public interface OperatorJpaRepository extends JpaRepository<OperatorEntity, Long> {
 
-    @Query("""
-            select o from OperatorEntity o
-            where not exists (
-                select f from OperatorFilmEntity f
-                where f.operator = o and f.filmId in :filmIds
-            )
-            """)
+    @Query("select o from OperatorEntity o "
+            + "where not exists ("
+            + "    select f from OperatorFilmEntity f"
+            + "    where f.operator = o and f.filmId in :filmIds"
+            + ")")
     Page<OperatorEntity> findWithoutFilms(@Param("filmIds") Collection<Long> filmIds, Pageable pageable);
 }

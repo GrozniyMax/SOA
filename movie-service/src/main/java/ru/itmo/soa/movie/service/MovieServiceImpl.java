@@ -33,14 +33,14 @@ public class MovieServiceImpl implements MovieService {
     public Movie addMovie(Movie movie) {
         Movie toSave = new Movie(
                 0L,
-                movie.name(),
-                movie.coordinates(),
+                movie.getName(),
+                movie.getCoordinates(),
                 LocalDate.now(),
-                movie.oscarsCount(),
-                movie.totalBoxOffice(),
-                movie.tagline(),
-                movie.genre(),
-                movie.director());
+                movie.getOscarsCount(),
+                movie.getTotalBoxOffice(),
+                movie.getTagline(),
+                movie.getGenre(),
+                movie.getDirector());
         validate(toSave);
         return dao.save(toSave);
     }
@@ -55,15 +55,15 @@ public class MovieServiceImpl implements MovieService {
     public Movie updateMovie(long id, Movie movie) {
         Movie existing = dao.findById(id).orElseThrow(() -> new MovieNotFoundException(id));
         Movie toSave = new Movie(
-                existing.id(),
-                movie.name(),
-                movie.coordinates(),
-                existing.creationDate(),
-                movie.oscarsCount(),
-                movie.totalBoxOffice(),
-                movie.tagline(),
-                movie.genre(),
-                movie.director());
+                existing.getId(),
+                movie.getName(),
+                movie.getCoordinates(),
+                existing.getCreationDate(),
+                movie.getOscarsCount(),
+                movie.getTotalBoxOffice(),
+                movie.getTagline(),
+                movie.getGenre(),
+                movie.getDirector());
         validate(toSave);
         return dao.save(toSave);
     }
@@ -79,7 +79,7 @@ public class MovieServiceImpl implements MovieService {
     @Override
     @Transactional(readOnly = true)
     public PageResult<Movie> searchMovies(MovieSearchCriteria criteria) {
-        criteria.filters().forEach(this::validate);
+        criteria.getFilters().forEach(this::validate);
         return dao.search(criteria);
     }
 
@@ -108,37 +108,37 @@ public class MovieServiceImpl implements MovieService {
     }
 
     private void validate(Filter filter) {
-        if (filter.value() == null) {
-            throw new InvalidSearchFilterException("filter value for " + filter.path().getPath() + " must not be null");
+        if (filter.getValue() == null) {
+            throw new InvalidSearchFilterException("filter value for " + filter.getPath().getPath() + " must not be null");
         }
         try {
-            filter.path().parse(filter.value());
+            filter.getPath().parse(filter.getValue());
         } catch (RuntimeException e) {
             throw new InvalidSearchFilterException(
-                    "invalid value '" + filter.value() + "' for filter " + filter.path().getPath());
+                    "invalid value '" + filter.getValue() + "' for filter " + filter.getPath().getPath());
         }
     }
 
     private void validate(Movie movie) {
-        if (movie.name() == null || movie.name().isBlank()) {
+        if (movie.getName() == null || movie.getName().isBlank()) {
             throw new InvalidMovieDataException("name must not be null or blank");
         }
-        if (movie.coordinates() == null) {
+        if (movie.getCoordinates() == null) {
             throw new InvalidMovieDataException("coordinates must not be null");
         }
-        if (movie.genre() == null) {
+        if (movie.getGenre() == null) {
             throw new InvalidMovieDataException("genre must not be null");
         }
-        if (movie.director() == null) {
+        if (movie.getDirector() == null) {
             throw new InvalidMovieDataException("director must not be null");
         }
-        if (movie.tagline() != null && movie.tagline().length() > properties.taglineMaxLength()) {
-            throw new InvalidMovieDataException("tagline length must not exceed " + properties.taglineMaxLength());
+        if (movie.getTagline() != null && movie.getTagline().length() > properties.getTaglineMaxLength()) {
+            throw new InvalidMovieDataException("tagline length must not exceed " + properties.getTaglineMaxLength());
         }
-        if (movie.oscarsCount() != null && movie.oscarsCount() <= 0) {
+        if (movie.getOscarsCount() != null && movie.getOscarsCount() <= 0) {
             throw new InvalidMovieDataException("oscarsCount must be greater than 0");
         }
-        if (movie.totalBoxOffice() != null && movie.totalBoxOffice() <= 0) {
+        if (movie.getTotalBoxOffice() != null && movie.getTotalBoxOffice() <= 0) {
             throw new InvalidMovieDataException("totalBoxOffice must be greater than 0");
         }
     }

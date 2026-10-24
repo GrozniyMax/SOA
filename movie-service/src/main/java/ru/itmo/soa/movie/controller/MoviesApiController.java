@@ -32,7 +32,7 @@ public class MoviesApiController implements MoviesApi {
     @Override
     public ResponseEntity<Movie> addMovie(MovieRequest movieRequest) {
         var created = service.addMovie(mapper.toDomain(movieRequest));
-        return ResponseEntity.created(URI.create("/movies/" + created.id())).body(mapper.toDto(created));
+        return ResponseEntity.created(URI.create("/movies/" + created.getId())).body(mapper.toDto(created));
     }
 
     @Override

@@ -1,14 +1,20 @@
 package ru.itmo.soa.oscar.domain;
 
+import lombok.AllArgsConstructor;
+import lombok.Value;
+
 /**
  * Связь оператора с фильмом.
  *
- * @param id         идентификатор связи
- * @param operatorId идентификатор оператора
- * @param filmId     идентификатор фильма
+ * <p>Была record; переписана в immutable-класс (Java 11) в стиле Lombok {@code @Value}.</p>
  */
-public record OperatorFilm(
-        Long id,
-        Long operatorId,
-        Long filmId) {
+@Value
+@AllArgsConstructor
+public class OperatorFilm {
+
+    Long id;
+
+    Long operatorId;
+
+    Long filmId;
 }

@@ -55,10 +55,10 @@ public class JpaMovieDao implements MovieDao {
     @Transactional
     public Movie save(Movie movie) {
         MovieEntity entity = mapper.toEntity(movie);
-        entity.setCoordinates(acquireCoordinates(movie.coordinates()));
-        entity.setDirector(acquireDirector(movie.director()));
+        entity.setCoordinates(acquireCoordinates(movie.getCoordinates()));
+        entity.setDirector(acquireDirector(movie.getDirector()));
 
-        if (movie.id() == 0L) {
+        if (movie.getId() == 0L) {
             // Новая запись — обнуляем id, чтобы БД сгенерировала его через IDENTITY.
             entity.setId(null);
             return mapper.toDomain(movieRepository.save(entity));
@@ -66,10 +66,10 @@ public class JpaMovieDao implements MovieDao {
 
         // Обновление: сначала переводим FK фильма на новые координаты (flush),
         // затем освобождаем прежние координаты.
-        Long oldCoordinatesId = movieRepository.findById(movie.id())
+        Long oldCoordinatesId = movieRepository.findById(movie.getId())
                 .map(m -> m.getCoordinates().getId())
                 .orElse(null);
-        entity.setId(movie.id());
+        entity.setId(movie.getId());
         MovieEntity saved = movieRepository.save(entity);
         movieRepository.flush();
         CoordinatesEntity newCoordinates = saved.getCoordinates();
@@ -116,7 +116,7 @@ public class JpaMovieDao implements MovieDao {
         Page<MovieEntity> page = movieRepository.findAll(
                 MovieSpecifications.from(criteria),
                 MovieSpecifications.pageable(criteria));
-        List<Movie> items = page.getContent().stream().map(mapper::toDomain).toList();
+        List<Movie> items = page.getContent().stream().map(mapper::toDomain).collect(Collectors.toList());
         return new PageResult<>(items, page.getTotalElements(), page.getNumber(), page.getSize());
     }
 
@@ -125,7 +125,7 @@ public class JpaMovieDao implements MovieDao {
     public PageResult<Movie> findByDirectorGreaterThan(String director, int page, int size) {
         Pageable pageable = buildPageable(page, size);
         Page<MovieEntity> result = movieRepository.findByDirector_NameGreaterThan(director, pageable);
-        List<Movie> items = result.getContent().stream().map(mapper::toDomain).toList();
+        List<Movie> items = result.getContent().stream().map(mapper::toDomain).collect(Collectors.toList());
         return new PageResult<>(items, result.getTotalElements(), result.getNumber(), result.getSize());
     }
 
@@ -151,7 +151,7 @@ public class JpaMovieDao implements MovieDao {
         movieRepository.nullOscarsByDirectors(directors);
         return directors.stream()
                 .map(director -> new DirectorsHumiliation(director, revoked.getOrDefault(director, 0)))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     /**
@@ -159,15 +159,15 @@ public class JpaMovieDao implements MovieDao {
      * (увеличивая счётчик ссылок) или создаёт новую с {@code refCount = 1}.
      */
     private CoordinatesEntity acquireCoordinates(Coordinates coordinates) {
-        return coordinatesRepository.findByXAndY(coordinates.x(), coordinates.y())
+        return coordinatesRepository.findByXAndY(coordinates.getX(), coordinates.getY())
                 .map(existing -> {
                     existing.setRefCount(existing.getRefCount() + 1);
                     return coordinatesRepository.save(existing);
                 })
                 .orElseGet(() -> {
                     CoordinatesEntity created = new CoordinatesEntity();
-                    created.setX(coordinates.x());
-                    created.setY(coordinates.y());
+                    created.setX(coordinates.getX());
+                    created.setY(coordinates.getY());
                     created.setRefCount(1);
                     return coordinatesRepository.save(created);
                 });
@@ -177,13 +177,13 @@ public class JpaMovieDao implements MovieDao {
      * Возвращает сущность режиссёра: переиспользует существующего по имени или создаёт нового.
      */
     private PersonEntity acquireDirector(Person director) {
-        return personRepository.findByName(director.name())
+        return personRepository.findByName(director.getName())
                 .orElseGet(() -> {
                     PersonEntity created = new PersonEntity();
-                    created.setName(director.name());
-                    created.setBirthday(director.birthday());
-                    created.setEyeColor(director.eyeColor());
-                    created.setHairColor(director.hairColor());
+                    created.setName(director.getName());
+                    created.setBirthday(director.getBirthday());
+                    created.setEyeColor(director.getEyeColor());
+                    created.setHairColor(director.getHairColor());
                     return personRepository.save(created);
                 });
     }

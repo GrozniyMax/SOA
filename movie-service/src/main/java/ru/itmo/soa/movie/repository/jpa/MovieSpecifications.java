@@ -1,10 +1,10 @@
 package ru.itmo.soa.movie.repository.jpa;
 
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Path;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.Expression;
+import javax.persistence.criteria.Path;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -16,6 +16,7 @@ import ru.itmo.soa.movie.domain.MovieSearchCriteria;
 import ru.itmo.soa.movie.repository.entity.MovieEntity;
 
 import java.util.Arrays;
+import java.util.stream.Collectors;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
@@ -30,12 +31,12 @@ public final class MovieSpecifications {
     }
 
     public static Specification<MovieEntity> from(MovieSearchCriteria criteria) {
-        if (criteria.filters() == null || criteria.filters().isEmpty()) {
+        if (criteria.getFilters() == null || criteria.getFilters().isEmpty()) {
             return (root, query, cb) -> cb.conjunction();
         }
 
         return (root, query, cb) -> {
-            Predicate[] predicates = criteria.filters().stream()
+            Predicate[] predicates = criteria.getFilters().stream()
                     .map(filter -> toPredicate(root, cb, filter))
                     .toArray(Predicate[]::new);
             return cb.and(predicates);
@@ -43,38 +44,35 @@ public final class MovieSpecifications {
     }
 
     public static Pageable pageable(MovieSearchCriteria criteria) {
-        int page = Math.max(criteria.page(), 0);
-        int size = Math.min(Math.max(criteria.size(), 1), MAX_PAGE_SIZE);
-        Sort sort = parseSort(criteria.sort());
+        int page = Math.max(criteria.getPage(), 0);
+        int size = Math.min(Math.max(criteria.getSize(), 1), MAX_PAGE_SIZE);
+        Sort sort = parseSort(criteria.getSort());
         return PageRequest.of(page, size, sort);
     }
 
     private static Predicate toPredicate(Root<MovieEntity> root, CriteriaBuilder cb, Filter filter) {
-        MovieFieldPath fieldPath = filter.path();
+        MovieFieldPath fieldPath = filter.getPath();
         Path<Object> attributePath = resolvePath(root, fieldPath.getPath());
-        Object parsedValue = fieldPath.parse(filter.value());
-        FilterComparator comparator = filter.comparator();
+        Object parsedValue = fieldPath.parse(filter.getValue());
+        FilterComparator comparator = filter.getComparator();
 
         switch (comparator) {
-            case EQ -> {
+            case EQ:
                 return cb.equal(attributePath, parsedValue);
-            }
-            case GT -> {
+            case GT:
                 return cb.greaterThan(asComparable(attributePath), (Comparable) parsedValue);
-            }
-            case LT -> {
+            case LT:
                 return cb.lessThan(asComparable(attributePath), (Comparable) parsedValue);
-            }
-            case SUBSTRING -> {
+            case SUBSTRING:
                 if (fieldPath.isString()) {
                     return cb.like(
                             cb.lower(attributePath.as(String.class)),
-                            "%" + escapeLike(filter.value().toLowerCase(Locale.ROOT)) + "%",
+                            "%" + escapeLike(filter.getValue().toLowerCase(Locale.ROOT)) + "%",
                             LIKE_ESCAPE);
                 }
                 return cb.equal(attributePath, parsedValue);
-            }
-            default -> throw new IllegalArgumentException("Unsupported comparator: " + comparator);
+            default:
+                throw new IllegalArgumentException("Unsupported comparator: " + comparator);
         }
     }
 
@@ -109,7 +107,7 @@ public final class MovieSpecifications {
                 .filter(part -> !part.isEmpty())
                 .map(MovieSpecifications::toOrder)
                 .filter(Objects::nonNull)
-                .toList();
+                .collect(Collectors.toList());
 
         return orders.isEmpty() ? Sort.unsorted() : Sort.by(orders);
     }

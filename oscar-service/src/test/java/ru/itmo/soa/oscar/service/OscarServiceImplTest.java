@@ -1,7 +1,6 @@
 package ru.itmo.soa.oscar.service;
 
 import org.junit.jupiter.api.Test;
-import ru.itmo.soa.movie.client.MoviesApi;
 import ru.itmo.soa.movie.dto.Comparator;
 import ru.itmo.soa.movie.dto.DirectorsHumiliateRequest;
 import ru.itmo.soa.movie.dto.DirectorsHumiliation;
@@ -12,6 +11,7 @@ import ru.itmo.soa.movie.dto.MovieFilter;
 import ru.itmo.soa.movie.dto.MoviePage;
 import ru.itmo.soa.movie.dto.MovieSearchRequest;
 import ru.itmo.soa.movie.dto.Person;
+import ru.itmo.soa.oscar.client.MovieServiceFeignClient;
 import ru.itmo.soa.oscar.config.HumiliateProperties;
 import ru.itmo.soa.oscar.domain.HumiliationResult;
 import ru.itmo.soa.oscar.domain.MovieGenre;
@@ -38,9 +38,15 @@ import static org.mockito.ArgumentCaptor.forClass;
 class OscarServiceImplTest {
 
     private final OscarDao dao = mock(OscarDao.class);
-    private final MoviesApi moviesApi = mock(MoviesApi.class);
+    private final MovieServiceFeignClient moviesApi = mock(MovieServiceFeignClient.class);
     private final OscarServiceImpl service =
-            new OscarServiceImpl(dao, moviesApi, new HumiliateProperties(2));
+            new OscarServiceImpl(dao, moviesApi, humiliateProperties(2));
+
+    private static HumiliateProperties humiliateProperties(int batchSize) {
+        HumiliateProperties properties = new HumiliateProperties();
+        properties.setBatchSize(batchSize);
+        return properties;
+    }
 
     // ---- Вспомогательные конструкторы сгенерированных DTO ----
 

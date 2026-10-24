@@ -1,21 +1,30 @@
 package ru.itmo.soa.movie.domain;
 
+import lombok.Value;
+
 import java.util.List;
 
 /**
  * Критерии динамического поиска фильмов (POST /movies/search).
  *
- * @param filters список фильтров
- * @param sort    строка сортировки, например "name:asc,oscarsCount:desc"
- * @param page    номер страницы (>= 0)
- * @param size    размер страницы (1..100)
+ * <p>Была record с компактным конструктором; переписана в immutable-класс (Java 11)
+ * в стиле Lombok {@code @Value}. Нормализация списка фильтров сохранена в конструкторе.</p>
  */
-public record MovieSearchCriteria(List<Filter> filters, String sort, int page, int size) {
+@Value
+public class MovieSearchCriteria {
 
-    /**
-     * Компактный конструктор: пустой список фильтров по умолчанию.
-     */
-    public MovieSearchCriteria {
-        filters = filters == null ? List.of() : List.copyOf(filters);
+    List<Filter> filters;
+
+    String sort;
+
+    int page;
+
+    int size;
+
+    public MovieSearchCriteria(List<Filter> filters, String sort, int page, int size) {
+        this.filters = filters == null ? List.of() : List.copyOf(filters);
+        this.sort = sort;
+        this.page = page;
+        this.size = size;
     }
 }

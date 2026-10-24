@@ -51,8 +51,12 @@ public interface MovieJpaRepository
             + "WHERE m.director.name IN :directors AND m.oscarsCount > 0 GROUP BY m.director.name")
     List<Object[]> sumOscarsByDirectors(@Param("directors") Collection<String> directors);
 
+    // Hibernate 5 не поддерживает неявные join'ы в bulk-update HQL
+    // (m.director.name генерирует невалидный «cross join»), поэтому режиссёры
+    // выбираются подзапросом; семантика та же, что в Hibernate 6.
     @Modifying
     @Query("UPDATE MovieEntity m SET m.oscarsCount = null "
-            + "WHERE m.oscarsCount > 0 AND m.director.name IN :directors")
+            + "WHERE m.oscarsCount > 0 AND m.director.id IN ("
+            + "    SELECT p.id FROM PersonEntity p WHERE p.name IN :directors)")
     int nullOscarsByDirectors(@Param("directors") Collection<String> directors);
 }

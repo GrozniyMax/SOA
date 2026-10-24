@@ -1,14 +1,20 @@
 package ru.itmo.soa.oscar.domain;
 
+import lombok.AllArgsConstructor;
+import lombok.Value;
+
 /**
  * Результат отзыва оскаров.
  *
- * @param genre            жанр, по которому производился отзыв
- * @param affectedDirectors количество режиссёров, которых затронул отзыв
- * @param revokedOscars     количество отозванных оскаров
+ * <p>Была record; переписана в immutable-класс (Java 11) в стиле Lombok {@code @Value}.</p>
  */
-public record HumiliationResult(
-        MovieGenre genre,
-        int affectedDirectors,
-        int revokedOscars) {
+@Value
+@AllArgsConstructor
+public class HumiliationResult {
+
+    MovieGenre genre;
+
+    int affectedDirectors;
+
+    int revokedOscars;
 }

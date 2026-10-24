@@ -61,7 +61,7 @@ public class MovieFeignConfiguration {
         OkHttpClient.Builder builder = new OkHttpClient.Builder()
                 .connectTimeout(Duration.ofMillis(CONNECT_TIMEOUT_MS))
                 .readTimeout(Duration.ofMillis(READ_TIMEOUT_MS));
-        if (StringUtils.hasText(props.truststore())) {
+        if (StringUtils.hasText(props.getTruststore())) {
             TrustManagerFactory factory = trustManagerFactory(props);
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null, factory.getTrustManagers(), new SecureRandom());
@@ -102,10 +102,10 @@ public class MovieFeignConfiguration {
 
     private static TrustManagerFactory trustManagerFactory(MovieServiceProperties props)
             throws GeneralSecurityException, IOException {
-        char[] password = props.truststorePassword() == null
+        char[] password = props.getTruststorePassword() == null
                 ? new char[0]
-                : props.truststorePassword().toCharArray();
-        KeyStore trustStore = KeyStore.getInstance(new File(props.truststore()), password);
+                : props.getTruststorePassword().toCharArray();
+        KeyStore trustStore = KeyStore.getInstance(new File(props.getTruststore()), password);
         TrustManagerFactory factory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         factory.init(trustStore);
         return factory;
