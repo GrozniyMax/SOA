@@ -4,6 +4,9 @@
 # только spring.application.name, spring.config.import и dev-профиль (H2).
 server:
   port: ${MOVIE_PORT:8080}
+  servlet:
+    # Как в lab2 (там контекст задавался деплоем в Payara): API живёт под /movie-service.
+    context-path: /movie-service
 
 spring:
   datasource:
