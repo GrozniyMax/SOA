@@ -1,8 +1,7 @@
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
-import org.springframework.boot.gradle.tasks.bundling.BootWar
+import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 plugins {
-    war
     id("org.springframework.boot") version "3.5.3"
     id("org.openapi.generator") version "7.10.0"
 }
@@ -12,6 +11,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
+    implementation("org.springframework.cloud:spring-cloud-starter-config")
+    implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     implementation("io.github.openfeign:feign-okhttp")
     implementation("io.github.openfeign:feign-jackson")
     implementation("io.github.openfeign:feign-form")
@@ -24,7 +25,6 @@ dependencies {
     testAnnotationProcessor("org.projectlombok:lombok")
     runtimeOnly("org.postgresql:postgresql")
     runtimeOnly("com.h2database:h2")
-    providedRuntime("org.springframework.boot:spring-boot-starter-tomcat")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
@@ -103,6 +103,6 @@ val generateMovieFeignClient = tasks.register<GenerateTask>("generateMovieFeignC
     ))
 }
 
-tasks.named<BootWar>("bootWar") {
-    archiveFileName.set("oscar.war")
+tasks.named<BootJar>("bootJar") {
+    archiveFileName.set("oscar.jar")
 }

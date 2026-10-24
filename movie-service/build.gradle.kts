@@ -1,8 +1,6 @@
-import java.net.URI
-import org.springframework.boot.gradle.tasks.bundling.BootWar
+import org.springframework.boot.gradle.tasks.bundling.BootJar
 
 plugins {
-    war
     id("org.springframework.boot") version "3.5.3"
     id("org.openapi.generator") version "7.10.0"
 }
@@ -11,6 +9,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.cloud:spring-cloud-starter-config")
+    implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     implementation("org.mapstruct:mapstruct:1.6.3")
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
@@ -19,8 +19,13 @@ dependencies {
     testAnnotationProcessor("org.projectlombok:lombok")
     runtimeOnly("org.postgresql:postgresql")
     runtimeOnly("com.h2database:h2")
-    providedRuntime("org.springframework.boot:spring-boot-starter-tomcat")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:2025.0.0")
+    }
 }
 
 openApiGenerate {
@@ -62,41 +67,6 @@ tasks.named("compileJava") {
     dependsOn("openApiGenerate")
 }
 
-tasks.named<BootWar>("bootWar") {
-    archiveFileName.set("movie-service.war")
-}
-
-val payaraMicroVersion = "6.2025.4"
-val payaraMicroJar = layout.buildDirectory.file("libs/payara-micro.jar")
-
-tasks.register("downloadPayaraMicro") {
-    group = "application"
-    description = "Скачивает Payara Micro для локального запуска WAR."
-    outputs.file(payaraMicroJar)
-    doLast {
-        val target = payaraMicroJar.get().asFile
-        if (!target.exists()) {
-            target.parentFile.mkdirs()
-            val url = URI(
-                "https://repo1.maven.org/maven2/fish/payara/extras/payara-micro/" +
-                    "$payaraMicroVersion/payara-micro-$payaraMicroVersion.jar"
-            )
-            url.toURL().openStream().use { input ->
-                target.outputStream().use { output -> input.copyTo(output) }
-            }
-        }
-    }
-}
-
-tasks.register("runPayara") {
-    group = "application"
-    description = "Запускает movie-service на embedded Payara Micro (java -jar payara-micro.jar --deploy movie.war)."
-    dependsOn("bootWar", "downloadPayaraMicro")
-    doLast {
-        val war = tasks.named<BootWar>("bootWar").get().archiveFile.get().asFile
-        val jar = payaraMicroJar.get().asFile
-        providers.exec {
-            commandLine("java", "-jar", jar.absolutePath, "--deploy", war.absolutePath)
-        }.result.get()
-    }
+tasks.named<BootJar>("bootJar") {
+    archiveFileName.set("movie-service.jar")
 }

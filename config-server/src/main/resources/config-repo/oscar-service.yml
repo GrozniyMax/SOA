@@ -28,3 +28,9 @@ cors:
 
 instance:
   id: ${INSTANCE_ID:}
+
+# Инстансы oscar-service должны быть различимы в реестре Eureka:
+# INSTANCE_ID задаётся per-instance через env (1 и 2 в docker-compose).
+eureka:
+  instance:
+    instance-id: ${spring.application.name}:${INSTANCE_ID:1}
