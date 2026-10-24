@@ -12,7 +12,7 @@ all: build up
 
 ## build: jar-файлы всех четырёх серверных модулей + сборка фронтенда (Vite)
 build:
-	$(GRADLE) :movie-service:bootJar :oscar-service:bootJar :config-server:bootJar :eureka-server:bootJar :api-gateway:shadowJar
+	$(GRADLE) :movie-service:bootJar :oscar-service:bootJar :config-server:bootJar :eureka-server:bootJar :api-gateway:gatewayDist
 	$(VITE_ENV) npm --prefix frontend run build
 
 ## certs: генерация self-signed сертификатов для gateway и nginx
