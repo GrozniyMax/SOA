@@ -160,7 +160,7 @@ services:
       SSL_ENABLED: "true"
       KEYSTORE_PATH: /certs/gateway.p12
       KEYSTORE_PASSWORD: ${KEYSTORE_PASSWORD:-changeit}
-      _JAVA_OPTIONS: ${GATEWAY_JAVA_OPTIONS:--Xmx384m -XX:MaxMetaspaceSize=128m}
+      _JAVA_OPTIONS: ${GATEWAY_JAVA_OPTIONS:--Xmx320m -XX:MaxMetaspaceSize=128m}
     volumes:
       - ./certs:/certs:ro
     ports:
@@ -170,6 +170,7 @@ services:
         condition: service_healthy
       haproxy:
         condition: service_started
+    # heap 320m + metaspace 128m + code cache/threads/GC — запас под 512m.
     mem_limit: 512m
     restart: unless-stopped
 
