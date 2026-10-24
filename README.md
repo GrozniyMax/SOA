@@ -223,4 +223,6 @@ python3 -m http.server 8080
   Config/Eureka/Feign, legacy-остров api-gateway, развёртывание.
 - [docs/architecture-lab3.html](docs/architecture-lab3.html) — интерактивная архитектурная схема
   (открыть в браузере).
+- [docs/lab3-variants-comparison.md](docs/lab3-variants-comparison.md) — сравнение двух вариантов
+  реализации лабы (этот, план A — «legacy-остров», и полный откат на Hoxton в ветке `lab3-hoxton`).
 - [docs/plan-lab3.md](docs/plan-lab3.md) — исходный план реализации (вариант A).
