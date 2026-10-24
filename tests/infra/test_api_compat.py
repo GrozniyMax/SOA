@@ -40,9 +40,11 @@ def test_movie_crud_contract(session, gateway_url):
         assert created["name"] == VALID_MOVIE["name"]
         assert created["creationDate"]
 
-        # GET по Location -> 200
-        resp = session.get(location if location.startswith("http")
-                           else f"{gateway_url}{location}")
+        # Location возвращается как /movies/{id} (без context-path) —
+        # через gateway ходим по /movie-service
+        assert location.endswith(f"movies/{created['id']}"), location
+        get_url = f"{gateway_url}/movie-service/movies/{created['id']}"
+        resp = session.get(get_url)
         assert resp.status_code == 200
         fetched = resp.json()
         assert fetched["id"] == created["id"]
@@ -62,7 +64,7 @@ def test_movie_crud_contract(session, gateway_url):
             session.delete(f"{gateway_url}/movie-service/movies/{created['id']}")
 
     # GET после DELETE -> 404
-    resp = session.get(f"{gateway_url}/movie-service/movies/{movie_id}")
+    resp = session.get(f"{gateway_url}/movie-service/movies/{created['id']}")
     assert resp.status_code == 404
 
 
