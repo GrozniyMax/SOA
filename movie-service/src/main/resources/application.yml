@@ -1,0 +1,8 @@
+# Локальная часть movie-service: имя приложения и опциональный импорт из Config Server.
+# Внешние значения (PostgreSQL, порт, CORS, eureka) приходят из config-repo,
+# приоритет которого ниже локального конфига; dev-профиль (H2) — в application-dev.yml.
+spring:
+  application:
+    name: movie-service
+  config:
+    import: optional:configserver:${CONFIG_URL:http://localhost:8888}

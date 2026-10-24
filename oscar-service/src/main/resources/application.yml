@@ -1,0 +1,8 @@
+# Локальная часть oscar-service: имя приложения и опциональный импорт из Config Server.
+# Внешние значения (PostgreSQL, порт, контекст-путь, movie.service, CORS, eureka)
+# приходят из config-repo с приоритетом ниже локального; dev-профиль (H2) — в application-dev.yml.
+spring:
+  application:
+    name: oscar-service
+  config:
+    import: optional:configserver:${CONFIG_URL:http://localhost:8888}
