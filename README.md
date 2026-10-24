@@ -216,3 +216,11 @@ pytest + requests; проверяют **поднятый** стек (`make up` �
 python3 -m http.server 8080
 # открыть http://localhost:8080/docs/
 ```
+
+## Архитектура и документация
+
+- [docs/architecture-lab3.md](docs/architecture-lab3.md) — как устроен стек: маршруты запросов,
+  Config/Eureka/Feign, legacy-остров api-gateway, развёртывание.
+- [docs/architecture-lab3.html](docs/architecture-lab3.html) — интерактивная архитектурная схема
+  (открыть в браузере).
+- [docs/plan-lab3.md](docs/plan-lab3.md) — исходный план реализации (вариант A).
