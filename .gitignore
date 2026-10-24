@@ -6,3 +6,4 @@ build/
 # env-файлы с реальными значениями — не коммитим, только .env.example
 **/.env
 **/certs/
+.nessy-session

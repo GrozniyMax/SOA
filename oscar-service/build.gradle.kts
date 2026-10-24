@@ -3,6 +3,7 @@ import org.springframework.boot.gradle.tasks.bundling.BootWar
 
 plugins {
     war
+    id("org.springframework.boot") version "3.5.3"
     id("org.openapi.generator") version "7.10.0"
 }
 
