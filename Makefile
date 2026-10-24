@@ -47,7 +47,7 @@ test:
 	$(GRADLE) test
 
 ## test-infra: инфраструктурные pytest-тесты (проверяют поднятый стек)
-test-infra:
+test-infra: env
 	python3 -m pytest tests/infra/ -v
 
 ## clean: без удаления volume БД; для полного сброса есть purge
