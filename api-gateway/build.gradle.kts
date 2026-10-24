@@ -32,7 +32,8 @@ configurations.all {
 
 tasks {
     jar {
-        // Не публикуем plain jar под именем артефакта сборки.
+        // Классификатор нужен, чтобы plain jar не конфликтовал по имени
+        // с classifier-less shadow-жиром (оба называются api-gateway.jar).
         archiveClassifier.set("plain")
     }
 
@@ -47,7 +48,6 @@ tasks {
         append("META-INF/spring.schemas")
         manifest {
             attributes["Main-Class"] = "ru.itmo.soa.gateway.ApiGatewayApplication"
-            attributes["Start-Class"] = "ru.itmo.soa.gateway.ApiGatewayApplication"
         }
     }
 

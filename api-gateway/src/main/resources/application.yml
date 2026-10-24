@@ -11,15 +11,10 @@ eureka:
       defaultZone: ${EUREKA_URL:http://eureka:8761/eureka}
 
 zuul:
-  ignore-local-service: false
   routes:
     movie-service:
       path: /movie-service/**
       service-id: MOVIE-SERVICE
-    oscar:
+    oscar-service:
       path: /oscar/**
-      url: http://haproxy:9090/oscar
-
-ribbon:
-  eureka:
-    enabled: true
+      url: ${OSCAR_URL:http://haproxy:9090/oscar}
