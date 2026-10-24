@@ -1,17 +1,8 @@
+# Локальная часть movie-service: имя приложения и опциональный импорт из Config Server.
+# Внешние значения (PostgreSQL, порт, CORS, eureka) приходят из config-repo,
+# приоритет которого ниже локального конфига; dev-профиль (H2) — в application-dev.yml.
 spring:
   application:
     name: movie-service
-  datasource:
-    url: ${MOVIE_DB_URL:jdbc:postgresql://localhost:5432/movie}
-    username: ${MOVIE_DB_USERNAME:movie}
-    password: ${MOVIE_DB_PASSWORD:movie}
-  jpa:
-    hibernate:
-      ddl-auto: ${JPA_DDL_AUTO:update}
-    open-in-view: false
-
-server:
-  port: 8080
-
-cors:
-  allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+  config:
+    import: optional:configserver:${CONFIG_URL:http://localhost:8888}
