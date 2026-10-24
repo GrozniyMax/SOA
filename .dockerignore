@@ -1,6 +1,8 @@
 *
-!movie-service/build/libs/movie-service.war
-!oscar-service/build/libs/oscar.war
-!deploy/payara/
-!deploy/tomcat/
+!api-gateway/build/dist/lib/
+!config-server/build/dist/lib/
+!eureka-server/build/dist/lib/
+!movie-service/build/dist/lib/
+!oscar-service/build/dist/lib/
 !frontend/dist/
+!deploy/nginx.conf

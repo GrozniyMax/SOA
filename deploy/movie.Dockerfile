@@ -1,5 +1,10 @@
-FROM payara/server-web:6.2025.4-jdk21
+# movie-service: Spring Boot 2.3 / Java 11, classpath-дистрибутив (lib/),
+# внутренний plain HTTP :8080. Снаружи доступен только через api-gateway —
+# порт наружу не публикуется.
+FROM eclipse-temurin:11-jre
 
-COPY deploy/payara/import-cert.sh ${SCRIPT_DIR}/init.d/import-cert.sh
-COPY deploy/payara/pre-boot-commands.asadmin ${PREBOOT_COMMANDS}
-COPY movie-service/build/libs/movie-service.war ${DEPLOY_DIR}/movie-service.war
+WORKDIR /app
+COPY movie-service/build/dist/lib /app/lib
+
+EXPOSE 8080
+ENTRYPOINT ["java", "-cp", "/app/lib/*", "ru.itmo.soa.movie.MovieServiceApplication"]
