@@ -13,6 +13,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
     implementation("org.springframework.cloud:spring-cloud-starter-config")
+    // Hoxton: bootstrap-контекст включён по умолчанию в spring-cloud-context
+    // (spring-cloud-starter-bootstrap появился только в Spring Cloud 2020.0),
+    // поэтому bootstrap.yml работает без дополнительного стартера.
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     implementation("io.github.openfeign:feign-okhttp")
     implementation("io.github.openfeign:feign-jackson")

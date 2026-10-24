@@ -1,6 +1,5 @@
+# spring.application.name перенесён в bootstrap.yml (bootstrap-контекст Boot 2.3).
 spring:
-  application:
-    name: movie-service
   datasource:
     url: ${MOVIE_DB_URL:jdbc:postgresql://localhost:5432/movie}
     username: ${MOVIE_DB_USERNAME:movie}
