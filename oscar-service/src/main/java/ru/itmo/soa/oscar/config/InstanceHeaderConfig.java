@@ -15,6 +15,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class InstanceHeaderConfig implements WebMvcConfigurer {
 
+    public static final String INSTANCE_HEADER = "X-Instance";
+
     private final String instanceId;
 
     public InstanceHeaderConfig(@Value("${instance.id:}") String instanceId) {
@@ -29,7 +31,7 @@ public class InstanceHeaderConfig implements WebMvcConfigurer {
         registry.addInterceptor(new HandlerInterceptor() {
             @Override
             public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-                response.setHeader("X-Instance", instanceId);
+                response.setHeader(INSTANCE_HEADER, instanceId);
                 return true;
             }
         });
