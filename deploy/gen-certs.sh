@@ -42,6 +42,7 @@ openssl pkcs12 -export -name gateway \
 keytool -importcert -noprompt -alias gateway -file gateway.crt \
   -keystore gateway-truststore.p12 -storetype PKCS12 -storepass "$PASSWORD"
 
-chmod 644 ./*.p12 gateway.crt gateway.key frontend.crt frontend.key
+chmod 644 ./*.p12 gateway.crt frontend.crt
+chmod 600 gateway.key frontend.key
 
 ls -1 "$DIR"

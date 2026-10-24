@@ -6,5 +6,5 @@ FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY oscar-service/build/libs/oscar.jar /app/oscar.jar
 
-EXPOSE 8081
+EXPOSE 8081 8082
 ENTRYPOINT ["java", "-jar", "/app/oscar.jar"]
