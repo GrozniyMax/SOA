@@ -1,8 +1,9 @@
+// oscar-service: миграция на Boot 2.3 / Hoxton / Java 11 (стадия B1 — только сборка,
+// Java-код будет мигрирован на стадиях B2–B4, компиляция ожидаемо падает).
+
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
-import org.springframework.boot.gradle.tasks.bundling.BootWar
 
 plugins {
-    war
     id("org.openapi.generator") version "7.10.0"
 }
 
@@ -11,6 +12,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
+    implementation("org.springframework.cloud:spring-cloud-starter-config")
+    implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     implementation("io.github.openfeign:feign-okhttp")
     implementation("io.github.openfeign:feign-jackson")
     implementation("io.github.openfeign:feign-form")
@@ -23,13 +26,12 @@ dependencies {
     testAnnotationProcessor("org.projectlombok:lombok")
     runtimeOnly("org.postgresql:postgresql")
     runtimeOnly("com.h2database:h2")
-    providedRuntime("org.springframework.boot:spring-boot-starter-tomcat")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
 dependencyManagement {
     imports {
-        mavenBom("org.springframework.cloud:spring-cloud-dependencies:2025.0.0")
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:Hoxton.SR12")
     }
 }
 
@@ -43,7 +45,7 @@ openApiGenerate {
     configOptions.set(mapOf(
         "interfaceOnly" to "true",
         "useTags" to "true",
-        "useSpringBoot3" to "true",
+        "useSpringBoot3" to "false",
         "useBeanValidation" to "true",
         "openApiNullable" to "false",
         "generateApiTests" to "false",
@@ -85,7 +87,7 @@ val generateMovieFeignClient = tasks.register<GenerateTask>("generateMovieFeignC
     invokerPackage.set("ru.itmo.soa.movie")
     configOptions.set(mapOf(
         "dateLibrary" to "java8",
-        "useJakartaEe" to "true",
+        "useJakartaEe" to "false",
         "openApiNullable" to "false",
         "generateApiTests" to "false",
         "generateModelTests" to "false",
@@ -102,6 +104,6 @@ val generateMovieFeignClient = tasks.register<GenerateTask>("generateMovieFeignC
     ))
 }
 
-tasks.named<BootWar>("bootWar") {
-    archiveFileName.set("oscar.war")
+tasks.named<Jar>("jar") {
+    archiveFileName.set("oscar.jar")
 }
