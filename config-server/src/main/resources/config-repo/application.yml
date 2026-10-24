@@ -1,5 +1,5 @@
 # Общая конфигурация для всех клиентов Config Server.
-# Отдаётся как remote PropertySource: с override-none=true (bootstrap.yml сервисов)
+# Отдаётся как remote PropertySource: с override-none=true (задаётся ниже, со стороны сервера)
 # её приоритет НИЖЕ локального application.yml — здесь только внешние
 # (прод-like) значения, реальные значения приходят через env при запуске
 # в контейнерах; локальный dev-профиль (H2) целиком живёт в сервисе.
