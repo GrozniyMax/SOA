@@ -17,6 +17,13 @@ subprojects {
     apply(plugin = "java")
     apply(plugin = "io.spring.dependency-management")
 
+    // Единый BOM для всего проекта — в модулях не дублируется.
+    configure<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension> {
+        imports {
+            mavenBom("org.springframework.cloud:spring-cloud-dependencies:Hoxton.SR12")
+        }
+    }
+
     java {
         toolchain {
             languageVersion = JavaLanguageVersion.of(11)
@@ -47,5 +54,10 @@ subprojects {
         from(configurations.getByName("runtimeClasspath"))
         from(tasks.named("jar"))
         into(layout.buildDirectory.dir("dist/lib"))
+    }
+
+    // appDist — основной артефакт приложения (Docker/запуск), вешаем на стандартный lifecycle.
+    tasks.named("assemble") {
+        dependsOn("appDist")
     }
 }

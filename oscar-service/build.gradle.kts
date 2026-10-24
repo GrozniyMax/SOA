@@ -29,11 +29,6 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
-dependencyManagement {
-    imports {
-        mavenBom("org.springframework.cloud:spring-cloud-dependencies:Hoxton.SR12")
-    }
-}
 
 openApiGenerate {
     generatorName.set("spring")
@@ -105,5 +100,6 @@ val generateMovieFeignClient = tasks.register<GenerateTask>("generateMovieFeignC
 }
 
 tasks.named<Jar>("jar") {
+    // Отличается от имени модуля — на него ссылается deploy/oscar.Dockerfile.
     archiveFileName.set("oscar.jar")
 }

@@ -22,11 +22,6 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
-dependencyManagement {
-    imports {
-        mavenBom("org.springframework.cloud:spring-cloud-dependencies:Hoxton.SR12")
-    }
-}
 
 openApiGenerate {
     generatorName.set("spring")
@@ -65,8 +60,4 @@ sourceSets {
 
 tasks.named("compileJava") {
     dependsOn("openApiGenerate")
-}
-
-tasks.named<Jar>("jar") {
-    archiveFileName.set("movie-service.jar")
 }
