@@ -1,0 +1,18 @@
+# spring.application.name перенесён в bootstrap.yml (bootstrap-контекст Boot 2.3).
+spring:
+  datasource:
+    url: ${MOVIE_DB_URL:jdbc:postgresql://localhost:5432/movie}
+    username: ${MOVIE_DB_USERNAME:movie}
+    password: ${MOVIE_DB_PASSWORD:movie}
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    open-in-view: false
+
+server:
+  # Порт параметризуем локально (env > yml): remote-источник из config-repo
+  # из-за override-none имеет НИЗШИЙ приоритет и порт из env не пробросит.
+  port: ${MOVIE_PORT:8080}
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:}

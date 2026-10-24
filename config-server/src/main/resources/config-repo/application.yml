@@ -1,0 +1,26 @@
+# Общая конфигурация для всех клиентов Config Server.
+# Отдаётся как remote PropertySource: с override-none=true (задаётся ниже, со стороны сервера)
+# её приоритет НИЖЕ локального application.yml — здесь только внешние
+# (прод-like) значения, реальные значения приходят через env при запуске
+# в контейнерах; локальный dev-профиль (H2) целиком живёт в сервисе.
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    open-in-view: false
+  cloud:
+    config:
+      # В Hoxton флаги приоритета (override-none и т.п.) bind'ятся PropertySourceBootstrapConfiguration
+      # ИЗ САМИХ remote-источников (не из bootstrap.yml клиента): сервер решает,
+      # может ли клиент перекрывать remote-значения. true — remote становится
+      # дефолтом с НИЗШИМ приоритетом: локальные application*.yml и dev-профиль
+      # клиента выигрывают (иначе postgres-URL из config-repo перебивал H2 из dev).
+      override-none: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
+  instance:
+    # В контейнерах регистрироваться по IP, а не по hostname контейнера.
+    prefer-ip-address: true

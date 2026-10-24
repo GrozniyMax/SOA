@@ -1,0 +1,18 @@
+# Конфигурация movie-service, внешняя часть (Production/контейнерный запуск).
+# Приоритет remote PropertySource ниже локального application.yml (override-none):
+# здесь — сервер/порт, подключение к PostgreSQL, CORS; локально в сервисе
+# остаются только dev-профиль (H2) и локальные значения по умолчанию.
+server:
+  port: ${MOVIE_PORT:8080}
+  servlet:
+    # Как в lab2 (там контекст задавался деплоем в Payara): API живёт под /movie-service.
+    context-path: /movie-service
+
+spring:
+  datasource:
+    url: ${MOVIE_DB_URL:jdbc:postgresql://localhost:5432/movie}
+    username: ${MOVIE_DB_USERNAME:movie}
+    password: ${MOVIE_DB_PASSWORD:movie}
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:}

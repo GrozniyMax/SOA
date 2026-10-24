@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: api-gateway
+
+server:
+  port: ${SERVER_PORT:8443}
+  ssl:
+    # Шлюз — единственная публичная точка входа: терминирует TLS.
+    # При SSL_ENABLED=false работает по plain HTTP (локальная разработка / внутренний трафик).
+    enabled: ${SSL_ENABLED:false}
+    key-store: ${KEYSTORE_PATH:}
+    key-store-password: ${KEYSTORE_PASSWORD:}
+    key-store-type: PKCS12
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://eureka:8761/eureka}
+    registry-fetch-interval-seconds: 5
+  instance:
+    prefer-ip-address: true
+
+zuul:
+  # Проксировать исходный Host-заголовок (а не вычисленный из маршрута)
+  add-host-header: true
+  routes:
+    movie-service:
+      path: /movie-service/**
+      service-id: MOVIE-SERVICE
+      # movie-service слушает на порту 8080 с context-path /movie-service.
+      # Zuul по умолчанию срезает совпавший префикс (/movie-service), и Ribbon-маршрут
+      # отправил бы запрос на <host>:8080/movies/... — без context-path, т.е. 404.
+      # Отключаем срезание: /movie-service/movies/... уходит целиком на
+      # http://<eureka-instance>:8080/movie-service/movies/...
+      strip-prefix: false
+    oscar-service:
+      path: /oscar/**
+      # URL-маршрут: Zuul срезает префикс /oscar и добавляет остаток к URL.
+      # URL оканчивается на /oscar — это и есть context-path oscar-service,
+      # поэтому /oscar/operators/losers -> ${OSCAR_URL}/operators/losers. Дефолт корректен.
+      url: ${OSCAR_URL:http://haproxy:9090/oscar}
+
+# Ribbon-таймауты для маршрута movie-service:
+# батч-вызов humiliate может быть медленным, поэтому ReadTimeout увеличен.
+movie-service:
+  ribbon:
+    ReadTimeout: 10000
+    ConnectTimeout: 3000
