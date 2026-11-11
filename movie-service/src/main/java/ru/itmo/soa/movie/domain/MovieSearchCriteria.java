@@ -4,12 +4,6 @@ import lombok.Value;
 
 import java.util.List;
 
-/**
- * Критерии динамического поиска фильмов (POST /movies/search).
- *
- * <p>Была record с компактным конструктором; переписана в immutable-класс (Java 11)
- * в стиле Lombok {@code @Value}. Нормализация списка фильтров сохранена в конструкторе.</p>
- */
 @Value
 public class MovieSearchCriteria {
 

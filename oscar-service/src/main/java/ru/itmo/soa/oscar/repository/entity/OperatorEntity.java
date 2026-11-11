@@ -9,9 +9,6 @@ import javax.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * JPA-сущность оператора (таблица operator).
- */
 @Entity
 @Table(name = "operator")
 @Getter

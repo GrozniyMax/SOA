@@ -8,10 +8,6 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/**
- * Добавляет заголовок X-Instance с идентификатором инстанса (env INSTANCE_ID)
- * на каждый ответ, чтобы тесты могли различать инстансы за балансировщиком.
- */
 @Configuration
 public class InstanceHeaderConfig implements WebMvcConfigurer {
 

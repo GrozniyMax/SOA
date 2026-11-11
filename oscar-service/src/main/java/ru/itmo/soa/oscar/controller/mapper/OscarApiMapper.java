@@ -8,11 +8,6 @@ import ru.itmo.soa.oscar.domain.Operator;
 import ru.itmo.soa.oscar.domain.PageResult;
 import ru.itmo.soa.oscar.dto.Page;
 
-/**
- * MapStruct-маппер между DTO из OpenAPI-спецификации и доменной моделью Oscar Service.
- * DTO-типы указываются полными именами, чтобы избежать неоднозначности с доменными
- * типами, носящими те же простые имена (Operator, HumiliationResult, MovieGenre, PageResult).
- */
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface OscarApiMapper {
 

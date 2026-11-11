@@ -22,10 +22,6 @@ import ru.itmo.soa.oscar.service.exception.MovieServiceUnavailableException;
 
 import java.util.stream.Collectors;
 
-/**
- * Глобальный обработчик исключений: маппит ошибки в {@link ApiError} и корректные HTTP-коды
- * в соответствии со спецификацией (400/405/406/415/422/500/502/503/504).
- */
 @Slf4j
 @RestControllerAdvice
 public class ApiExceptionHandler {

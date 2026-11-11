@@ -19,32 +19,16 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Конфигурация Feign-клиента для movie-service. Специально НЕ помечена
- * {@code @Configuration}: используется только как per-client конфигурация
- * {@code @FeignClient(configuration = ...)}, чтобы бины не применялись глобально.
- *
- * <p>Connect timeout 3000 мс, read timeout 5000 мс, опциональный truststore
- * из {@link MovieServiceProperties}.</p>
- */
 public class MovieFeignConfiguration {
 
     private static final int CONNECT_TIMEOUT_MS = 3000;
     private static final int READ_TIMEOUT_MS = 5000;
 
-    /**
-     * Сгенерированный Feign-интерфейс использует нативные аннотации Feign
-     * ({@code @RequestLine}/{@code @Headers}), поэтому нужен дефолтный контракт
-     * вместо {@code SpringMvcContract}.
-     */
     @Bean
     public Contract feignContract() {
         return new Contract.Default();
     }
 
-    /**
-     * Таймауты: 3000 мс на соединение, 5000 мс на ответ.
-     */
     @Bean
     public Request.Options requestOptions() {
         return new Request.Options(
@@ -52,9 +36,6 @@ public class MovieFeignConfiguration {
                 READ_TIMEOUT_MS, TimeUnit.MILLISECONDS, true);
     }
 
-    /**
-     * OkHttp-транспорт с опциональным TLS truststore.
-     */
     @Bean
     public OkHttpClient okHttpClient(MovieServiceProperties props)
             throws GeneralSecurityException, IOException {
@@ -80,11 +61,6 @@ public class MovieFeignConfiguration {
         return new FeignErrorDecoder();
     }
 
-    /**
-     * Транспортные IOException (таймаут, отказ соединения) Feign заворачивает в
-     * {@link RetryableException} и отдаёт Retryer'у; переводим их в доменные
-     * исключения без повторов.
-     */
     @Bean
     public Retryer retryer(FeignErrorDecoder decoder) {
         return new Retryer() {

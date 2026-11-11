@@ -1,8 +1,5 @@
 package ru.itmo.soa.oscar.service.exception;
 
-/**
- * Сервис фильмов недоступен (например, соединение отвергнуто). Маппится в HTTP 503.
- */
 public class MovieServiceUnavailableException extends RuntimeException {
 
     public MovieServiceUnavailableException(String message) {

@@ -29,18 +29,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-/**
- * Реализация {@link MovieDao} поверх Spring Data JPA.
- * Сквозь этот слой наружу проходят только доменные объекты; JPA-детали скрыты.
- *
- * Координаты переиспользуются по значению (x, y) и ведут счётчик ссылок {@code refCount}:
- * при создании/обновлении фильма счётчик инкрементируется, при удалении/замене —
- * декрементируется; при достижении 0 координаты удаляются. Режиссёр переиспользуется по имени.
- *
- * Важно про порядок операций: FK movie.coordinates_id указывает на coordinates, поэтому
- * координаты можно удалить только после того, как ссылающийся фильм удалён/обновлён
- * (иначе нарушение внешнего ключа).
- */
 @Slf4j
 @Repository
 @RequiredArgsConstructor
@@ -64,8 +52,6 @@ public class JpaMovieDao implements MovieDao {
             return mapper.toDomain(movieRepository.save(entity));
         }
 
-        // Обновление: сначала переводим FK фильма на новые координаты (flush),
-        // затем освобождаем прежние координаты.
         Long oldCoordinatesId = movieRepository.findById(movie.getId())
                 .map(m -> m.getCoordinates().getId())
                 .orElse(null);
@@ -154,10 +140,6 @@ public class JpaMovieDao implements MovieDao {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Возвращает сущность координат для значений (x, y): переиспользует существующую
-     * (увеличивая счётчик ссылок) или создаёт новую с {@code refCount = 1}.
-     */
     private CoordinatesEntity acquireCoordinates(Coordinates coordinates) {
         return coordinatesRepository.findByXAndY(coordinates.getX(), coordinates.getY())
                 .map(existing -> {
@@ -173,9 +155,6 @@ public class JpaMovieDao implements MovieDao {
                 });
     }
 
-    /**
-     * Возвращает сущность режиссёра: переиспользует существующего по имени или создаёт нового.
-     */
     private PersonEntity acquireDirector(Person director) {
         return personRepository.findByName(director.getName())
                 .orElseGet(() -> {
@@ -188,10 +167,6 @@ public class JpaMovieDao implements MovieDao {
                 });
     }
 
-    /**
-     * Освобождает ссылку на координаты по их id: декрементирует {@code refCount}
-     * и удаляет координаты, если счётчик достиг 0.
-     */
     private void releaseCoordinates(Long coordinatesId) {
         coordinatesRepository.findById(coordinatesId).ifPresent(coordinates -> {
             coordinates.setRefCount(coordinates.getRefCount() - 1);

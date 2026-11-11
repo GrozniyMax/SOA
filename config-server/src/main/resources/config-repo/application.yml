@@ -1,8 +1,4 @@
-# Общая конфигурация для всех клиентов Config Server.
-# Отдаётся как remote PropertySource: с override-none=true (задаётся ниже, со стороны сервера)
-# её приоритет НИЖЕ локального application.yml — здесь только внешние
-# (прод-like) значения, реальные значения приходят через env при запуске
-# в контейнерах; локальный dev-профиль (H2) целиком живёт в сервисе.
+# Общий remote-конфиг клиентов; из-за override-none приоритет ниже локального yml.
 spring:
   jpa:
     hibernate:
@@ -10,11 +6,7 @@ spring:
     open-in-view: false
   cloud:
     config:
-      # В Hoxton флаги приоритета (override-none и т.п.) bind'ятся PropertySourceBootstrapConfiguration
-      # ИЗ САМИХ remote-источников (не из bootstrap.yml клиента): сервер решает,
-      # может ли клиент перекрывать remote-значения. true — remote становится
-      # дефолтом с НИЗШИМ приоритетом: локальные application*.yml и dev-профиль
-      # клиента выигрывают (иначе postgres-URL из config-repo перебивал H2 из dev).
+      # override-none=true: remote — дефолт низшего приоритета, локальный yml/dev выигрывают.
       override-none: true
 
 eureka:

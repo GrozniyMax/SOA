@@ -1,8 +1,4 @@
-# oscar-service: Spring Boot 2.3 / Java 11, classpath-дистрибутив (lib/),
-# plain HTTP на ${OSCAR_PORT} (8081 у oscar-1, 8082 у oscar-2).
-# Порт наружу не публикуется — трафик идёт через haproxy.
-# Межсервисные Feign-вызовы movie-service идут через gateway (TLS) —
-# сертификат в /certs (см. docker-compose: ./certs:/certs:ro).
+# oscar-service: classpath-дистрибутив, HTTP на ${OSCAR_PORT}; наружу не публикуется, Feign через gateway (TLS).
 FROM eclipse-temurin:11-jre
 
 WORKDIR /app

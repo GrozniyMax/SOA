@@ -5,8 +5,7 @@ spring:
 server:
   port: ${SERVER_PORT:8443}
   ssl:
-    # Шлюз — единственная публичная точка входа: терминирует TLS.
-    # При SSL_ENABLED=false работает по plain HTTP (локальная разработка / внутренний трафик).
+    # Единственная точка входа: терминируем TLS (при SSL_ENABLED=false — plain HTTP).
     enabled: ${SSL_ENABLED:false}
     key-store: ${KEYSTORE_PATH:}
     key-store-password: ${KEYSTORE_PASSWORD:}
@@ -27,21 +26,14 @@ zuul:
     movie-service:
       path: /movie-service/**
       service-id: MOVIE-SERVICE
-      # movie-service слушает на порту 8080 с context-path /movie-service.
-      # Zuul по умолчанию срезает совпавший префикс (/movie-service), и Ribbon-маршрут
-      # отправил бы запрос на <host>:8080/movies/... — без context-path, т.е. 404.
-      # Отключаем срезание: /movie-service/movies/... уходит целиком на
-      # http://<eureka-instance>:8080/movie-service/movies/...
+      # У movie есть context-path /movie-service, поэтому префикс не срезаем (иначе 404).
       strip-prefix: false
     oscar-service:
       path: /oscar/**
-      # URL-маршрут: Zuul срезает префикс /oscar и добавляет остаток к URL.
-      # URL оканчивается на /oscar — это и есть context-path oscar-service,
-      # поэтому /oscar/operators/losers -> ${OSCAR_URL}/operators/losers. Дефолт корректен.
+      # Zuul срезает /oscar; URL кончается на /oscar (context-path oscar) — дефолт ок.
       url: ${OSCAR_URL:http://haproxy:9090/oscar}
 
-# Ribbon-таймауты для маршрута movie-service:
-# батч-вызов humiliate может быть медленным, поэтому ReadTimeout увеличен.
+# ReadTimeout увеличен: батч humiliate бывает медленным.
 movie-service:
   ribbon:
     ReadTimeout: 10000

@@ -257,7 +257,7 @@ pytest + requests; проверяют **поднятый** стек (`make up` �
 
 | Требование | Реализация |
 |-----------|------------|
-| Config Service | `config-server` (native, `config-repo/`), подключение сервисов через `bootstrap.yml` (Hoxton) |
+| Config Service | `config-server` (native, `config-repo/`), подключение сервисов через `bootstrap.yml`  |
 | Service Discovery (Eureka) | `eureka-server` :8761; регистрация всех сервисов, instance-id с `INSTANCE_ID` |
 | Client-side Load Balancer (Ribbon) | Ribbon в api-gateway резолвит `movie-service` через Eureka |
 | API Gateway (Zuul) | `api-gateway` :8443 (единый стек Boot 2.3/Hoxton — последний стек с Zuul+Ribbon), единая точка входа HTTPS |

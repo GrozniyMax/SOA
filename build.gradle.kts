@@ -2,10 +2,7 @@
 plugins {
     java
     id("io.spring.dependency-management") version "1.1.7" apply false
-    // Плагин Spring Boot НЕ применяем нигде: gradle-плагин Boot 2.3.x несовместим
-    // с Gradle 8.14 (LazyPublishArtifact NoSuchMethodError). Версии Boot пинятся
-    // транзитивно через BOM spring-cloud-dependencies:Hoxton.SR12
-    // (импортирует spring-boot-dependencies:2.3.12.RELEASE).
+    // Boot-плагин 2.3 несовместим с Gradle 8.14 — не применяем; версии пинятся BOM'ом Hoxton.
 }
 
 allprojects {
@@ -20,12 +17,10 @@ subprojects {
     // Единый BOM для всего проекта — в модулях не дублируется.
     configure<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension> {
         imports {
-            // Плагин dependency-management не раскрывает цепочку импортов BOM'ов,
-            // поэтому spring-boot-dependencies (Boot 2.3.12) импортируем явно.
+            // dependency-management не раскрывает цепочку BOM'ов — импортируем явно.
             mavenBom("org.springframework.boot:spring-boot-dependencies:2.3.12.RELEASE")
             mavenBom("org.springframework.cloud:spring-cloud-dependencies:Hoxton.SR12")
-            // Hoxton пинит feign 10.12 через вложенный feign-bom (цепочка импортов,
-            // которую плагин не раскрывает) — импортируем явно, иначе feign уедет в 13.x.
+            // Пиним feign 10.12 явно (иначе уедет в 13.x).
             mavenBom("io.github.openfeign:feign-bom:10.12")
         }
     }
@@ -56,10 +51,7 @@ subprojects {
             force("com.google.code.gson:gson:2.8.6")
         }
     }
-    // Classpath-дистрибутив вместо fat-jar: при склейке нескольких jar'ов
-    // META-INF/spring.factories мержится по правилу Properties (последний ключ
-    // побеждает), и автоконфигурации Zuul/Eureka молча теряются. Поэтому все jar'ы
-    // кладём рядом в build/dist/lib и запускаем через java -cp "lib/*" MainClass.
+    // Classpath-дистрибутив (не fat-jar): склейка ломает spring.factories/автоконфигурации.
     tasks.register<Sync>("appDist") {
         group = "build"
         description = "Собирает classpath-дистрибутив (jar'ы зависимостей + jar модуля) в build/dist/lib."

@@ -9,10 +9,6 @@ import ru.itmo.soa.movie.domain.PageResult;
 import java.util.Collection;
 import java.util.List;
 
-/**
- * Бизнес-логика Movie Collection Service.
- * Работает только с доменными объектами; персистентность — исключительно через DAO.
- */
 public interface MovieService {
 
     Movie addMovie(Movie movie);
@@ -31,8 +27,5 @@ public interface MovieService {
 
     PageResult<MovieGenre> getUniqueGenres(int page, int size);
 
-    /**
-     * Отзывает все Оскары у фильмов перечисленных режиссёров одним запросом.
-     */
     List<DirectorsHumiliation> humiliateDirectors(Collection<String> directors);
 }

@@ -1,9 +1,5 @@
 package ru.itmo.soa.movie.service.exception;
 
-/**
- * Исключение о том, что фильм не найден.
- * Несёт id ненайденного фильма для последующего маппинга в HTTP 404.
- */
 public class MovieNotFoundException extends RuntimeException {
 
     private final long id;

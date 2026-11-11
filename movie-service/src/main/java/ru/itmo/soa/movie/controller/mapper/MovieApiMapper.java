@@ -18,11 +18,6 @@ import ru.itmo.soa.movie.dto.MovieSearchRequest;
 
 import java.util.List;
 
-/**
- * MapStruct-маппер между DTO из OpenAPI-спецификации и доменной моделью.
- * Вспомогательные поля домена, отсутствующие в DTO (id, creationDate), оставляются
- * незаполненными — их проставляет сервисный слой.
- */
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface MovieApiMapper {
 

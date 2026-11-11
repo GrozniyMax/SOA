@@ -48,8 +48,6 @@ class OscarServiceImplTest {
         return properties;
     }
 
-    // ---- Вспомогательные конструкторы сгенерированных DTO ----
-
     private static Movie movie(int id, String director) {
         Person person = new Person();
         person.setName(director);
@@ -84,8 +82,6 @@ class OscarServiceImplTest {
     private static List<String> directorsOf(DirectorsHumiliateRequest request) {
         return request.getDirectors();
     }
-
-    // ---- getLosers ----
 
     @Test
     void getLosersPassesAwardedMovieIdsToDao() {
@@ -131,8 +127,6 @@ class OscarServiceImplTest {
         verify(dao, never()).findLosers(anyCollection(), anyInt(), anyInt());
     }
 
-    // ---- humiliateDirectorsByGenre ----
-
     @Test
     void humiliateWithNoDirectorsRevokesNothing() {
         when(moviesApi.searchMovies(any())).thenReturn(page(List.of(), 0));
@@ -149,8 +143,6 @@ class OscarServiceImplTest {
 
     @Test
     void humiliateSplitsDirectorsIntoChunksByConfiguredBatchSize() {
-        // Размер пачки — 2 (конфигурация HumiliateProperties), режиссёров — 3:
-        // ожидается два запроса humiliateDirectors с разбиением [A, B] и [C].
         when(moviesApi.searchMovies(any())).thenReturn(page(List.of(
                 movie(1, "Nolan"), movie(2, "Villeneuve"), movie(3, "Cameron")), 3));
         when(moviesApi.humiliateDirectors(any()))

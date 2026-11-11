@@ -1,13 +1,9 @@
-# Bootstrap-контекст (Boot 2.3 / Hoxton: без spring.config.import — имя и адрес
-# Config Server задаётся здесь, до загрузки основного application.yml).
+# Bootstrap : имя и адрес Config Server задаём до основного yml.
 spring:
   application:
     name: oscar-service
   cloud:
     config:
       uri: ${CONFIG_URL:http://localhost:8888}
-      # Без config-server сервис обязан стартовать (локальная разработка).
-      # ВАЖНО: флаг override-none в Hoxton читается из remote-конфига самим
-      # клиентом (bind по temp-Environment из remote-источников), поэтому он
-      # задан в config-repo/application.yml на стороне config-server.
+      # Стартуем и без config-server; override-none задаётся в config-repo/application.yml.
       fail-fast: false

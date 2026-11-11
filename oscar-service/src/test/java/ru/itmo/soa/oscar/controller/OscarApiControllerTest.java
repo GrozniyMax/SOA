@@ -25,11 +25,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Web-слой тест контроллера: проверяет маппинг эндпоинтов, отображение домена в DTO
- * через реальный MapStruct-маппер, а также глобальный обработчик исключений, включая
- * 502/503/504 при сбоях movie-service. Сервис замокан, маппер — реальный.
- */
 @WebMvcTest(OscarApiController.class)
 @Import(OscarApiMapperImpl.class)
 class OscarApiControllerTest {

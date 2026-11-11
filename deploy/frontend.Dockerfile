@@ -1,6 +1,4 @@
-# frontend: статика Vite-сборки + nginx с TLS :8444.
-# /movie-service/ и /oscar/ проксируются на gateway (same-origin API,
-# VITE_*_API — относительные пути).
+# frontend: Vite-статика + nginx TLS :8444; /movie-service/ и /oscar/ → gateway.
 FROM nginx:alpine
 
 RUN rm /etc/nginx/conf.d/default.conf

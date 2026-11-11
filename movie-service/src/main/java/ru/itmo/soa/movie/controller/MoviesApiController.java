@@ -17,10 +17,6 @@ import ru.itmo.soa.movie.service.MovieService;
 
 import java.net.URI;
 
-/**
- * REST-контроллер, реализующий сгенерированный из OpenAPI интерфейс {@link MoviesApi}.
- * Маппинг DTO ↔ домен выполняется через {@link MovieApiMapper}; бизнес-логика — в {@link MovieService}.
- */
 @Validated
 @RestController
 @RequiredArgsConstructor

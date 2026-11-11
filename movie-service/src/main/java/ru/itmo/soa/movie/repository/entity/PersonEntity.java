@@ -15,11 +15,6 @@ import ru.itmo.soa.movie.domain.HairColor;
 
 import java.time.LocalDate;
 
-/**
- * JPA-сущность режиссёра (отдельная таблица director).
- * Один режиссёр может быть у многих фильмов ({@code @ManyToOne} из MovieEntity).
- * Перечисления ({@link EyeColor}, {@link HairColor}) переиспользуются из домена.
- */
 @Entity
 @Table(name = "director")
 @Getter

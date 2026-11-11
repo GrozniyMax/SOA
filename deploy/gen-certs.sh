@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
-# Сертификаты для лабы №3 (full-Hoxton):
-#   gateway.p12             — PKCS12-keystore TLS-сервера api-gateway (:8443)
-#   gateway-truststore.p12  — truststore с сертификатом gateway (для Feign-клиента oscar)
-#   frontend.crt / frontend.key — TLS-сертификат nginx (:8444)
+# Сертификаты лабы: gateway.p12 (+truststore), frontend.crt/.key (TLS :8443/:8444).
 set -euo pipefail
 
 DIR="$(cd "$(dirname "$0")" && pwd)/certs"

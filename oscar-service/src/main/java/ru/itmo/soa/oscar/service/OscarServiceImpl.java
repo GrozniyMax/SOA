@@ -35,13 +35,7 @@ import static java.util.stream.Collectors.toSet;
 @RequiredArgsConstructor
 public class OscarServiceImpl implements OscarService {
 
-    /**
-     * Размер страницы при постраничной выборке фильмов из movie-service.
-     */
     private static final int SEARCH_PAGE_SIZE = 100;
-    /**
-     * Стабильный порядок выборки для детерминированного разбиения на пачки.
-     */
     private static final String SEARCH_SORT = "id:asc";
 
     private final OscarDao dao;
@@ -92,11 +86,6 @@ public class OscarServiceImpl implements OscarService {
         return new HumiliationResult(genre, affectedDirectors, revokedOscars);
     }
 
-    /**
-     * Лениво обходит все страницы выборки movie-service; количество страниц
-     * вычисляется по {@code total} из первого ответа, как раньше
-     * (условие остановки: {@code (page + 1) * size >= total}).
-     */
     private Stream<Movie> searchAll(List<MovieFilter> filters) {
         MoviePage first = fetchPage(filters, 0);
         if (first == null || first.getItems().isEmpty()) {

@@ -10,8 +10,7 @@ spring:
     open-in-view: false
 
 server:
-  # Порт параметризуем локально (env > yml): remote-источник из config-repo
-  # из-за override-none имеет НИЗШИЙ приоритет и порт из env не пробросит.
+  # Порт локально из env (remote-конфиг ниже приоритетом).
   port: ${MOVIE_PORT:8080}
 
 cors:

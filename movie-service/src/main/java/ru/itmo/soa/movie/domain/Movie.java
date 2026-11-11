@@ -5,11 +5,6 @@ import lombok.Value;
 
 import java.time.LocalDate;
 
-/**
- * Агрегат фильма (корень агрегата Movie Collection Service).
- *
- * <p>Была record; переписана в immutable-класс (Java 11) в стиле Lombok {@code @Value}.</p>
- */
 @Value
 @AllArgsConstructor
 public class Movie {

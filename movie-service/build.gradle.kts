@@ -1,5 +1,4 @@
-// movie-service: миграция на Boot 2.3 / Hoxton / Java 11 (стадия B1 — только сборка,
-// Java-код будет мигрирован на стадиях B2–B4, компиляция ожидаемо падает).
+// movie-service: Boot 2.3 / Hoxton / Java 11 (стадия B1 — только сборка).
 
 plugins {
     id("org.openapi.generator") version "7.10.0"
@@ -10,9 +9,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.cloud:spring-cloud-starter-config")
-    // Hoxton: bootstrap-контекст включён по умолчанию в spring-cloud-context
-    // (spring-cloud-starter-bootstrap появился только в Spring Cloud 2020.0),
-    // поэтому bootstrap.yml работает без дополнительного стартера.
+    // В Hoxton bootstrap-контекст уже в spring-cloud-context — доп. стартер не нужен.
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     implementation("org.mapstruct:mapstruct:1.6.3")
     compileOnly("org.projectlombok:lombok")

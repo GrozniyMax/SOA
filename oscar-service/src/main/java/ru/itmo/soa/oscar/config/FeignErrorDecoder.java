@@ -10,26 +10,8 @@ import java.net.ConnectException;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeoutException;
 
-/**
- * Маппинг ошибок Feign-клиента в доменные исключения oscar-service.
- *
- * <p>Цепочка причин раскручивается до первой значимой причины,
- * останавливаясь на таймауте или ошибке соединения.</p>
- *
- * <ul>
- *   <li>таймаут (SocketTimeoutException/TimeoutException) →
- *       {@link MovieServiceGatewayTimeoutException} (HTTP 504);</li>
- *   <li>ошибка соединения (ConnectException) →
- *       {@link MovieServiceUnavailableException} (HTTP 503);</li>
- *   <li>любой не-2xx ответ или неожиданная ошибка →
- *       {@link MovieServiceBadGatewayException} (HTTP 502).</li>
- * </ul>
- */
 public class FeignErrorDecoder implements ErrorDecoder {
 
-    /**
-     * Вызывается Feign для не-2xx HTTP-ответов movie-service.
-     */
     @Override
     public Exception decode(String methodKey, Response response) {
         return new MovieServiceBadGatewayException(
@@ -37,11 +19,6 @@ public class FeignErrorDecoder implements ErrorDecoder {
                         + " on " + methodKey + ": " + body(response));
     }
 
-    /**
-     * RetryableException-aware вариант: таймауты и отказы соединения Feign заворачивает
-     * в {@link feign.RetryableException} (внутри — исходный IOException), поэтому
-     * отдельная точка входа для транспортных ошибок.
-     */
     public RuntimeException decode(Throwable throwable) {
         Throwable cause = unwrap(throwable);
         if (cause instanceof SocketTimeoutException
@@ -57,9 +34,6 @@ public class FeignErrorDecoder implements ErrorDecoder {
                 "Unexpected error while calling movie-service", throwable);
     }
 
-    /**
-     * Раскручивает цепочку причин до первого значимого исключения.
-     */
     private Throwable unwrap(Throwable t) {
         Throwable current = t;
         while (current.getCause() != null

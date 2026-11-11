@@ -12,9 +12,6 @@ import javax.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * JPA-сущность связи оператора с фильмом (таблица operator_film).
- */
 @Entity
 @Table(name = "operator_film")
 @Getter

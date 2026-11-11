@@ -1,7 +1,4 @@
-# Конфигурация movie-service, внешняя часть (Production/контейнерный запуск).
-# Приоритет remote PropertySource ниже локального application.yml (override-none):
-# здесь — сервер/порт, подключение к PostgreSQL, CORS; локально в сервисе
-# остаются только dev-профиль (H2) и локальные значения по умолчанию.
+# movie-service (prod/контейнер): порт, PostgreSQL, CORS; локально — dev/H2.
 server:
   port: ${MOVIE_PORT:8080}
   servlet:

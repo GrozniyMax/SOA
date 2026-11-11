@@ -15,11 +15,6 @@ import ru.itmo.soa.oscar.service.OscarService;
 
 import java.util.Optional;
 
-/**
- * Web-контроллер Oscar Service: реализует оба сгенерированных OpenAPI-интерфейса.
- * Принимает/возвращает сгенерированные DTO, бизнес-логика выполняется только через
- * {@link OscarService}, маппинг DTO &lt;-&gt; домен выполняется {@link OscarApiMapper}.
- */
 @Validated
 @RestController
 @RequiredArgsConstructor

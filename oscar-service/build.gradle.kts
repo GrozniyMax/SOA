@@ -1,5 +1,4 @@
-// oscar-service: миграция на Boot 2.3 / Hoxton / Java 11 (стадия B1 — только сборка,
-// Java-код будет мигрирован на стадиях B2–B4, компиляция ожидаемо падает).
+// oscar-service: Boot 2.3 / Hoxton / Java 11 (стадия B1 — только сборка).
 
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
@@ -13,9 +12,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
     implementation("org.springframework.cloud:spring-cloud-starter-config")
-    // Hoxton: bootstrap-контекст включён по умолчанию в spring-cloud-context
-    // (spring-cloud-starter-bootstrap появился только в Spring Cloud 2020.0),
-    // поэтому bootstrap.yml работает без дополнительного стартера.
+    // В Hoxton bootstrap-контекст уже в spring-cloud-context — доп. стартер не нужен.
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     implementation("io.github.openfeign:feign-okhttp")
     implementation("io.github.openfeign:feign-jackson")

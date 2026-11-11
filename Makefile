@@ -1,5 +1,3 @@
-# Лаба №3 (hoxton): сборка и управление docker-compose-стеком.
-
 COMPOSE = docker compose -f deploy/docker-compose.yml --env-file deploy/.env
 CERTS_DIR = deploy/certs
 GRADLE = ./gradlew

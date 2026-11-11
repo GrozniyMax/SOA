@@ -9,11 +9,6 @@ import javax.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
-/**
- * JPA-сущность координат фильма (отдельная таблица coordinates).
- * Может разделяться несколькими фильмами; {@code refCount} — число фильмов,
- * ссылающихся на эти координаты. При {@code refCount == 0} координаты удаляются.
- */
 @Entity
 @Table(name = "coordinates")
 @Getter

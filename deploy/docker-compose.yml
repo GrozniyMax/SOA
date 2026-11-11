@@ -120,8 +120,7 @@ services:
     mem_limit: 512m
     restart: unless-stopped
 
-  # Merge key (<<:) в environment compose НЕ мерджит по-ключично — карта
-  # заменяется целиком, поэтому env дублируется явно.
+  # environment при <<: не мерджится по-ключично — поэтому env дублируем явно.
   oscar-2:
     <<: *oscar
     environment:

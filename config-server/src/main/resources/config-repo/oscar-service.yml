@@ -1,8 +1,4 @@
-# Конфигурация oscar-service, внешняя часть (Production/контейнерный запуск).
-# Приоритет remote PropertySource ниже локального application.yml (override-none):
-# здесь — сервер/контекст-путь, PostgreSQL, параметры movie-service и CORS;
-# локально в сервисе остаются только dev-профиль (H2) и локальные значения.
-# INSTANCE_ID — идентификатор конкретного инстанса, задаётся per-instance через env.
+# oscar-service (prod/контейнер): порт, PostgreSQL, movie, CORS; INSTANCE_ID — per-instance.
 server:
   port: ${OSCAR_PORT:8081}
   servlet:
@@ -29,8 +25,7 @@ cors:
 instance:
   id: ${INSTANCE_ID:1}
 
-# Инстансы oscar-service должны быть различимы в реестре Eureka:
-# INSTANCE_ID задаётся per-instance через env (1 и 2 в docker-compose).
+# Уникальный instance-id в Eureka: INSTANCE_ID задаётся per-instance.
 eureka:
   instance:
     instance-id: ${spring.application.name}:${INSTANCE_ID:1}

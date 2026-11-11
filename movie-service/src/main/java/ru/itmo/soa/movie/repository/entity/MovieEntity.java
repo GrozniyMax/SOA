@@ -17,11 +17,6 @@ import ru.itmo.soa.movie.domain.MovieGenre;
 
 import java.time.LocalDate;
 
-/**
- * JPA-сущность фильма (таблица movie).
- * Координаты и режиссёр — отдельные таблицы, на которые фильм ссылается через {@code @ManyToOne}.
- * Перечисление {@link MovieGenre} переиспользуется из домена.
- */
 @Entity
 @Table(name = "movie")
 @Getter
