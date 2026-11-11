@@ -3,7 +3,6 @@ name: soa-hoxton
 services:
   postgres:
     image: postgres:16-alpine
-    command: postgres -c shared_buffers=32MB -c max_connections=30
     environment:
       POSTGRES_DB: movie
       POSTGRES_USER: ${DB_USERNAME:-soa}
@@ -16,7 +15,6 @@ services:
       interval: 2s
       timeout: 3s
       retries: 30
-    mem_limit: 256m
     restart: unless-stopped
 
   config-server:
@@ -41,7 +39,6 @@ services:
       default:
         aliases:
           - config
-    mem_limit: 384m
     restart: unless-stopped
 
   eureka-server:
@@ -63,7 +60,6 @@ services:
       default:
         aliases:
           - eureka
-    mem_limit: 384m
     restart: unless-stopped
 
   movie:
@@ -87,7 +83,6 @@ services:
         condition: service_healthy
       eureka-server:
         condition: service_healthy
-    mem_limit: 768m
     restart: unless-stopped
 
   oscar-1: &oscar
@@ -116,8 +111,6 @@ services:
         condition: service_healthy
       eureka-server:
         condition: service_healthy
-    # heap 256m + metaspace 192m + overhead — в пределах 512m
-    mem_limit: 512m
     restart: unless-stopped
 
   # environment при <<: не мерджится по-ключично — поэтому env дублируем явно.
@@ -146,7 +139,6 @@ services:
     depends_on:
       - oscar-1
       - oscar-2
-    mem_limit: 128m
     restart: unless-stopped
 
   gateway:
@@ -169,8 +161,6 @@ services:
         condition: service_healthy
       haproxy:
         condition: service_started
-    # heap 320m + metaspace 128m + code cache/threads/GC — запас под 512m.
-    mem_limit: 512m
     restart: unless-stopped
 
   frontend:
@@ -183,7 +173,6 @@ services:
       - "${FRONTEND_PORT:-8444}:8444"
     depends_on:
       - gateway
-    mem_limit: 128m
     restart: unless-stopped
 
 volumes:
