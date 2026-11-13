@@ -1,16 +1,12 @@
-"""Балансировка HAProxy: roundrobin между двумя инстансами oscar-service.
-
-Каждый инстанс добавляет заголовок X-Instance со своим INSTANCE_ID
-(oscar-service .../config/InstanceHeaderConfig.java). Если под круглые
-запросы увидят только один идентификатор — значит балансировка не работает
-(или один из инстансов не отвечает за своим весом).
-"""
+"""Балансировка и обнаружение экземпляров Oscar через Eureka."""
 
 import os
 import subprocess
 import time
+from urllib.parse import quote
 
 import pytest
+from requests import RequestException
 
 pytestmark = pytest.mark.usefixtures("stack_ready")
 
@@ -18,16 +14,39 @@ COMPOSE = ["docker", "compose", "-f", "deploy/docker-compose.yml", "--env-file",
 
 
 def test_haproxy_roundrobin_both_instances(session, gateway_url):
-    instances = set()
-    for _ in range(20):
-        resp = session.get(f"{gateway_url}/oscar/operators/losers")
-        assert resp.status_code == 200, resp.text
-        value = resp.headers.get("X-Instance")
-        if value:
-            instances.add(value)
-    # NOTE: если один инстанс oscar упал/не зарегистрирован, здесь будет
-    # только одно значение X-Instance — это тоже падение данного теста.
-    assert instances == {"1", "2"}, f"ожидались инстансы 1 и 2, получено: {instances}"
+    _wait_for_routing(session, gateway_url, {"1", "2"})
+
+
+def _wait_for_routing(session, gateway_url, expected):
+    deadline = time.monotonic() + 90
+    while time.monotonic() < deadline:
+        try:
+            responses = [
+                session.get(f"{gateway_url}/oscar/operators/losers", timeout=5)
+                for _ in range(6)
+            ]
+            observed = {(response.status_code, response.headers.get("X-Instance")) for response in responses}
+            if observed == {(200, instance) for instance in expected}:
+                return
+        except RequestException as error:
+            observed = str(error)
+        time.sleep(2)
+    pytest.fail(f"Ожидались инстансы {expected}, последние ответы: {observed}")
+
+
+def test_haproxy_follows_eureka_status(session, eureka_url, gateway_url):
+    """Eureka выводит экземпляр из HAProxy, пока контейнер продолжает работать."""
+    _wait_for_routing(session, gateway_url, {"1", "2"})
+    instance = quote("oscar-service:2", safe="")
+    status_url = f"{eureka_url}/eureka/apps/OSCAR-SERVICE/{instance}/status"
+    try:
+        response = session.put(status_url, params={"value": "OUT_OF_SERVICE"}, timeout=5)
+        response.raise_for_status()
+        _wait_for_routing(session, gateway_url, {"1"})
+    finally:
+        response = session.delete(status_url, params={"value": "UP"}, timeout=5)
+        response.raise_for_status()
+    _wait_for_routing(session, gateway_url, {"1", "2"})
 
 
 def _compose(*args):
@@ -42,24 +61,7 @@ def test_haproxy_failover_single_instance(session, gateway_url):
     его из ротации по health-check, второй инстанс продолжает отвечать."""
     try:
         _compose("stop", "oscar-2")
-        deadline = time.monotonic() + 60
-        instances = set()
-        while time.monotonic() < deadline and instances != {"1"}:
-            resp = session.get(f"{gateway_url}/oscar/operators/losers")
-            if resp.status_code == 200 and resp.headers.get("X-Instance"):
-                instances.add(resp.headers["X-Instance"])
-            time.sleep(2)
-        assert instances == {"1"}, (
-            f"после stop oscar-2 отвечать должен только инстанс 1, получено: {instances}"
-        )
+        _wait_for_routing(session, gateway_url, {"1"})
     finally:
         _compose("start", "oscar-2")
-    # Инстанс вернулся в ротацию.
-    deadline = time.monotonic() + 90
-    instances = set()
-    while time.monotonic() < deadline and instances != {"1", "2"}:
-        resp = session.get(f"{gateway_url}/oscar/operators/losers")
-        if resp.status_code == 200 and resp.headers.get("X-Instance"):
-            instances.add(resp.headers["X-Instance"])
-        time.sleep(3)
-    assert instances == {"1", "2"}, f"oscar-2 не вернулся в ротацию: {instances}"
+    _wait_for_routing(session, gateway_url, {"1", "2"})

@@ -24,29 +24,28 @@ classpath-упаковку `appDist`; у каждого модуля свой `b
 | `config-server` | Spring Cloud Config Server, native-профиль (config-repo/ на FS) | dist (classpath) | 8888 | — |
 | `eureka-server` | Service Discovery (standalone) | dist (classpath) | 8761 | — |
 | `api-gateway` | Zuul Proxy + Ribbon + Eureka client; единственная входная точка API (HTTPS) | dist (classpath) | 8443 | — |
-| `haproxy` | roundrobin-балансировка oscar-1/oscar-2, stats-страница | docker-образ | 9090 (внутри), stats 8404 | `/oscar` |
+| `eureka-dns` | DNS-адаптер реестра `OSCAR-SERVICE` | docker-образ | 8053/TCP (внутри) | — |
+| `haproxy` | roundrobin-балансировка экземпляров Oscar из Eureka, stats-страница | docker-образ | 9090 (внутри), stats 8404 | `/oscar` |
 | `frontend` | nginx: статика Vite + same-origin проксирование на gateway | docker-образ | 8444 | TLS |
 
 ### Топология (docker)
 
 ```
 Интернет ──► frontend (nginx, HTTPS :8444) ──► api-gateway (Zuul, HTTPS :8443)
-                                                  ├─ /movie-service/** ── Ribbon ──► Eureka ──► movie-service :8080
-                                                  └─ /oscar/** ──► haproxy (roundrobin :9090) ──► oscar-1 :8081
-                                                                                                    └─► oscar-2 :8082
+                                                  ├─ /movie-service/** ── Ribbon ──► movie-service :8080
+                                                  └─ /oscar/** ──► haproxy (roundrobin :9090) ──► экземпляры Oscar
 oscar-service ──(Feign, HTTPS)──► gateway :8443/movie-service   # межсервисные вызовы тоже через Zuul
-config-server :8888 ◄── все сервисы (bootstrap.yml, Hoxton)
-eureka-server :8761 ◄── все сервисы регистрируются
-postgres
+config-server :8888 ◄── movie и Oscar (bootstrap.yml, Hoxton)
+eureka-server :8761 ◄── movie, gateway, oscar-1 и oscar-2 регистрируются
+haproxy ──(DNS SRV по TCP)──► eureka-dns :8053 ──(HTTP)──► eureka-server :8761
 ```
 
 - Все внешние запросы идут через gateway; напрямую сервисы наружу не публикуются
   (movie/oscar без `ports` в compose).
 - Маршрут `/movie-service/**` gateway резолвит через Ribbon+Eureka (по service-id,
   `strip-prefix: false` — путь уходит целиком, т.к. movie слушает с context-path);
-  маршрут `/oscar` закреплён на хост `haproxy` — балансировку между инстансами
-  oscar делает HAProxy (`deploy/haproxy/haproxy.cfg`, roundrobin + health-check).
-- Внутренний трафик между контейнерами — plain HTTP; HTTPS только на gateway и frontend.
+  маршрут `/oscar` идёт в HAProxy, который берёт адреса и порты экземпляров `UP`
+  из DNS-адаптера. HAProxy распределяет запросы по round-robin и проверяет TCP-порты.
 
 ### Межсервисные вызовы и truststore
 
@@ -217,9 +216,9 @@ make clean    # gradle clean + down (без удаления volume)
 make purge    # ДЕСТРУКТИВНО: down -v (удалить volume БД) + удалить сертификаты
 ```
 
-`make up` поднимает `deploy/docker-compose.yml`: postgres → config-server +
-eureka-server → movie + oscar-1 + oscar-2 → haproxy → gateway → frontend
-(healthchecks и `depends_on` задают порядок старта; все Java-образы — JRE 11).
+`make up` поднимает `deploy/docker-compose.yml`. Movie и Oscar ждут готовности
+PostgreSQL, Config Server и Eureka. HAProxy запускается после DNS-адаптера и
+заполняет backend по мере регистрации экземпляров Oscar. Все Java-образы используют JRE 11.
 Конфиги из `config-repo/` монтируются в config-server read-only — правки
 конфигурации не требуют пересборки образа.
 
@@ -247,7 +246,7 @@ pytest + requests; проверяют **поднятый** стек (`make up` �
 - `test_gateway.py` — проксирование movie и oscar через gateway; `GET /oscar/operators/losers`
   доказывает цепочку oscar → gateway → movie (межсервисный вызов через Zuul)
 - `test_api_compat.py` — контракт лабы №2 через gateway: POST 201+Location, GET/PUT/DELETE, 404, 400/422
-- `test_haproxy.py` — roundrobin oscar-1/oscar-2 по заголовку `X-Instance`
+- `test_haproxy.py` — roundrobin по `X-Instance`, отказ одного экземпляра и вывод из ротации через `OUT_OF_SERVICE` в Eureka
 
 Зависимости: `python3 -m pip install -r tests/infra/requirements.txt`.
 Самоподписанный TLS в тестах принимается (`verify=False`); фикстура `stack_ready`

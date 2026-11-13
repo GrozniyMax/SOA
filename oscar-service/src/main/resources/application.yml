@@ -15,6 +15,18 @@ server:
   servlet:
     context-path: /oscar
 
+instance:
+  id: ${INSTANCE_ID:1}
+
+eureka:
+  client:
+    register-with-eureka: true
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
+  instance:
+    instance-id: ${spring.application.name}:${instance.id}
+    prefer-ip-address: true
+
 # Базовый URL первого сервиса (movie-service) для межсервисного вызова.
 movie:
   service:

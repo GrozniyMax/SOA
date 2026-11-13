@@ -37,6 +37,5 @@ def test_oscar_service_two_up_instances(session, eureka_url):
     up = [i for i in instances if i["status"] == "UP"]
     statuses = [i["status"] for i in instances]
     assert len(up) == 2, f"ожидались 2 UP-инстанса oscar-service, got {statuses}"
-    ids = sorted(i["instanceId"] for i in up)
-    assert any(i.endswith(":1") for i in ids), f"нет инстанса с INSTANCE_ID=1: {ids}"
-    assert any(i.endswith(":2") for i in ids), f"нет инстанса с INSTANCE_ID=2: {ids}"
+    ports = {i["instanceId"]: int(i["port"]["$"]) for i in up}
+    assert ports == {"oscar-service:1": 8081, "oscar-service:2": 8082}

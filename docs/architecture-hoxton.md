@@ -16,12 +16,13 @@
 | **api-gateway** | API Gateway — единая публичная точка входа | **Zuul Proxy + Ribbon** (единый стек Boot 2.3, Java 11) | 8443 (TLS) |
 | **movie-service** | «Вызываемый» сервис | Spring Boot 2.3, classpath-дистрибутив | 8080 (внутр.) |
 | **oscar-service ×2** | «Вызывающий» сервис, 2 экземпляра | Spring Boot 2.3, classpath-дистрибутивы | 8081/8082 (внутр.) |
-| **haproxy** | Балансировка экземпляров oscar | HAProxy, roundrobin | 9090 (внутр.), stats 8404 |
+| **eureka-dns** | DNS-записи для экземпляров Oscar из реестра Eureka | DNS SRV, A и AAAA | 8053/TCP (внутр.) |
+| **haproxy** | Балансировка экземпляров Oscar | HAProxy, DNS `server-template`, roundrobin | 9090 (внутр.), stats 8404 |
 | **frontend** | SPA + reverse proxy | nginx, отдаёт `frontend/dist`, проксирует API на gateway | 8444 (TLS) |
 | **postgres** | Хранилище movie + oscar | PostgreSQL 16 | 5432 (внутр.) |
 
-Единственные публичные HTTPS-точки — frontend (:8444) и gateway (:8443). Внутренний
-трафик между контейнерами идёт по plain HTTP.
+Frontend (`:8444`) и Gateway (`:8443`) принимают HTTPS. Gateway обращается к Movie
+и HAProxy по HTTP.
 
 ## Маршруты запросов
 
@@ -38,9 +39,9 @@ Browser → https://host:8444 (nginx)
   movie-service слушает с context-path `/movie-service`. Ribbon-таймауты подняты
   (`ReadTimeout: 10000`) — батч-вызов humiliate может быть медленным.
 - `/oscar/**` — url-маршрут на `${OSCAR_URL:http://haproxy:9090/oscar}`; Zuul срезает
-  префикс `/oscar`, а URL сам оканчивается на context-path. Дальше HAProxy roundrobin
-  выбирает oscar-1/8081 или oscar-2/8082 (инстанс помечает свои ответы заголовком
-  `X-Instance: 1|2`).
+  префикс `/oscar`, а URL сам оканчивается на context-path. HAProxy распределяет
+  запросы по round-robin между экземплярами, обнаруженными через DNS. Экземпляры
+  `oscar-1:8081` и `oscar-2:8082` помечают ответы заголовком `X-Instance: 1|2`.
 
 ### Межсервисный вызов (oscar → movie)
 По заданию все запросы к сервисам идут через gateway: Feign-клиент oscar настроен на
@@ -120,6 +121,19 @@ legacy-остров» проект переведён на Hoxton **целико
 инстансов oscar: `oscar-service:1` и `oscar-service:2` (`INSTANCE_ID`), по ним же
 балансировка проверяется в тестах; свои ответы инстанс помечает `X-Instance`.
 
+### Обнаружение экземпляров Oscar в HAProxy
+
+`eureka-dns` опрашивает `/eureka/apps/OSCAR-SERVICE` каждые 5 секунд. Для каждого
+экземпляра `UP` с включённым HTTP-портом адаптер отдаёт запись SRV с портом из
+реестра и запись A или AAAA с IP-адресом. HAProxy запрашивает
+`_oscar._tcp.discovery.internal` у адаптера по TCP, заполняет до 10 слотов
+`server-template` и проверяет TCP-порты экземпляров.
+
+Смена статуса на `OUT_OF_SERVICE` убирает экземпляр из DNS после обновления
+реестра. При временной ошибке Eureka адаптер использует последний успешный
+снимок до 30 секунд, после чего отвечает `SERVFAIL`. Успешный ответ с пустым
+списком экземпляров приводит к удалению DNS-записей.
+
 ## Сборка и упаковка (classpath-dist)
 
 Градle-плагин Spring Boot 2.x несовместим с Gradle 8 (LazyPublishArtifact
@@ -147,10 +161,9 @@ make test-infra   # pytest tests/infra/ — проверки поднятого 
 make logs / ps / restart / down / clean / purge   # purge = down -v + удаление certs
 ```
 
-Порядок старта в compose: postgres → config-server + eureka-server (healthcheck
-через curl — в образе JRE нет /dev/tcp) → movie + oscar-1/2 → haproxy → gateway →
-frontend. Все Java-образы — JRE 11; JVM-опции (`*_JAVA_OPTIONS` через
-`_JAVA_OPTIONS`) согласованы с `mem_limit` контейнеров.
+Movie и Oscar ждут готовности PostgreSQL, Config Server и Eureka. DNS-адаптер
+ждёт готовности Eureka, а HAProxy стартует после адаптера. Gateway и frontend
+запускаются после HAProxy. Java-контейнеры используют JRE 11.
 
 ## Инфраструктурные тесты (`tests/infra/`)
 
@@ -160,8 +173,8 @@ pytest + requests, `make test-infra` (стек должен быть подня�
 3. **test_gateway** — проксирование через gateway (genres, search, losers) по HTTPS;
 4. **test_api_compat** — контракт лабы №2 сохранён через gateway: CRUD фильма
    (201+Location → GET → PUT → DELETE → 404), невалидное тело → 400/422;
-5. **test_haproxy** — roundrobin: повторные запросы попадают в оба инстанса
-   (X-Instance).
+5. **test_haproxy** — round-robin по `X-Instance`, переключение при остановке
+   контейнера и изменение ротации при смене статуса в Eureka.
 
 ## Соответствие заданию
 
