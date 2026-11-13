@@ -8,6 +8,12 @@ spring:
     hibernate:
       ddl-auto: ${JPA_DDL_AUTO:update}
     open-in-view: false
+  cloud:
+    loadbalancer:
+      ribbon:
+        enabled: false
+      cache:
+        enabled: false
 
 server:
   # Порт локально из env (remote-конфиг ниже приоритетом).
@@ -21,16 +27,18 @@ instance:
 eureka:
   client:
     register-with-eureka: true
+    registry-fetch-interval-seconds: 5
     service-url:
       defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
   instance:
     instance-id: ${spring.application.name}:${instance.id}
     prefer-ip-address: true
 
-# Базовый URL первого сервиса (movie-service) для межсервисного вызова.
+# По умолчанию Feign ищет movie-service в Eureka. Явный URL нужен для локального запуска.
 movie:
   service:
-    url: ${MOVIE_SERVICE_URL:http://localhost:8080}
+    url: ${MOVIE_SERVICE_URL:}
+    path: ${MOVIE_SERVICE_PATH:}
     truststore: ${MOVIE_SERVICE_TRUSTSTORE:}
     truststore-password: ${MOVIE_SERVICE_TRUSTSTORE_PASSWORD:}
   # Размер пачки режиссёров в одном запросе POST /movies/directors/humiliate.

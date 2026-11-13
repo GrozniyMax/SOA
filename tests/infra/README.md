@@ -31,7 +31,7 @@ python3 -m pip install -r tests/infra/requirements.txt
 
 - `test_eureka.py` — оба сервиса зарегистрированы и UP; oscar-service — двумя инстансами.
 - `test_config_server.py` — `/movie-service/default` и `/oscar-service/default` отдают propertySources с datasource/портами.
-- `test_gateway.py` — проксирование movie и oscar через gateway; `GET /oscar/operators/losers` = 200 доказывает цепочку oscar → gateway → movie.
+- `test_gateway.py` — проксирование Movie и Oscar через Gateway и прямой вызов Movie из Oscar.
 - `test_api_compat.py` — lab2-контракт `/movie-service/movies`: POST 201+Location, GET/PUT/DELETE, 404, 400/422 на невалидном body.
 - `test_haproxy.py` — round-robin по `X-Instance`, переключение при остановке контейнера и вывод из ротации через Eureka при работающем контейнере.
 

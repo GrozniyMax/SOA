@@ -45,13 +45,10 @@ API-клиент → https://host:8443 (nginx) → тот же пул Gateway (H
   `oscar-1:8081` и `oscar-2:8082` помечают ответы заголовком `X-Instance: 1|2`.
 
 ### Межсервисный вызов (oscar → movie)
-По заданию все запросы к сервисам идут через gateway: Feign-клиент oscar настроен на
-`MOVIE_SERVICE_URL=https://frontend:8443/movie-service`. Nginx предъявляет
-сертификат Gateway, которому Oscar доверяет через
-`MOVIE_SERVICE_TRUSTSTORE=/certs/gateway-truststore.p12`.
-
-Цепочка `Oscar → Nginx → Gateway → Movie` использует Feign и HTTPS на первом
-участке, затем HTTPS до Gateway и балансировку Ribbon до Movie.
+Feign-клиент Oscar обращается к `movie-service` по имени. Spring Cloud LoadBalancer
+выбирает экземпляр из локального реестра Eureka-клиента. Oscar обновляет реестр
+каждые 5 секунд и отправляет запрос напрямую по HTTP в сети Compose. Префикс
+`/movie-service` задаётся через `MOVIE_SERVICE_PATH`.
 
 ## Единый стек Boot 2.3 / Hoxton
 

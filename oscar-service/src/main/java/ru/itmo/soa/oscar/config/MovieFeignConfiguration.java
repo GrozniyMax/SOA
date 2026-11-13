@@ -1,10 +1,13 @@
 package ru.itmo.soa.oscar.config;
 
 import feign.Contract;
+import feign.Client;
 import feign.Request;
 import feign.RetryableException;
 import feign.Retryer;
 import okhttp3.OkHttpClient;
+import org.springframework.cloud.loadbalancer.blocking.client.BlockingLoadBalancerClient;
+import org.springframework.cloud.openfeign.loadbalancer.FeignBlockingLoadBalancerClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.util.StringUtils;
 
@@ -52,8 +55,8 @@ public class MovieFeignConfiguration {
     }
 
     @Bean
-    public feign.okhttp.OkHttpClient feignOkHttpClient(OkHttpClient client) {
-        return new feign.okhttp.OkHttpClient(client);
+    public Client feignClient(OkHttpClient client, BlockingLoadBalancerClient loadBalancer) {
+        return new FeignBlockingLoadBalancerClient(new feign.okhttp.OkHttpClient(client), loadBalancer);
     }
 
     @Bean

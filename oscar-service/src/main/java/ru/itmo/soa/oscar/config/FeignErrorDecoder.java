@@ -14,6 +14,9 @@ public class FeignErrorDecoder implements ErrorDecoder {
 
     @Override
     public Exception decode(String methodKey, Response response) {
+        if (response.status() == 503) {
+            return new MovieServiceUnavailableException("movie-service is unavailable");
+        }
         return new MovieServiceBadGatewayException(
                 "movie-service responded with status " + response.status()
                         + " on " + methodKey + ": " + body(response));

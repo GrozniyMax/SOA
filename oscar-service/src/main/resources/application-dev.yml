@@ -10,3 +10,7 @@ spring:
     hibernate:
       ddl-auto: create-drop
     open-in-view: false
+
+movie:
+  service:
+    url: ${MOVIE_SERVICE_URL:http://localhost:8080}

@@ -11,6 +11,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
+    implementation("org.springframework.cloud:spring-cloud-starter-loadbalancer")
     implementation("org.springframework.cloud:spring-cloud-starter-config")
     // В Hoxton bootstrap-контекст уже в spring-cloud-context — доп. стартер не нужен.
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")

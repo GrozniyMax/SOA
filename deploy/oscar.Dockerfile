@@ -1,4 +1,4 @@
-# oscar-service: classpath-дистрибутив, HTTP на ${OSCAR_PORT}; наружу не публикуется, Feign через gateway (TLS).
+# Oscar вызывает Movie через Feign и клиентскую балансировку.
 FROM eclipse-temurin:11-jre
 
 WORKDIR /app

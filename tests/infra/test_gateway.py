@@ -1,8 +1,7 @@
 """Проксирование через API Gateway (Zuul, HTTPS self-signed).
 
 Маршруты: /movie-service/** -> movie (из Eureka), /oscar/** -> haproxy -> oscar x2.
-Запрос GET /oscar/operators/losers внутри oscar-service ходит в movie-service
-через тот же gateway — значит 200 доказывает цепочку oscar -> gateway -> movie.
+Запрос GET /oscar/operators/losers также проверяет прямой вызов Movie из Oscar.
 """
 
 import pytest

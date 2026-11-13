@@ -12,7 +12,8 @@ spring:
 
 movie:
   service:
-    url: ${MOVIE_SERVICE_URL:http://localhost:8080}
+    url: ${MOVIE_SERVICE_URL:}
+    path: ${MOVIE_SERVICE_PATH:}
     truststore: ${MOVIE_SERVICE_TRUSTSTORE:}
     truststore-password: ${MOVIE_SERVICE_TRUSTSTORE_PASSWORD:}
   # Размер пачки режиссёров в одном запросе POST /movies/directors/humiliate.

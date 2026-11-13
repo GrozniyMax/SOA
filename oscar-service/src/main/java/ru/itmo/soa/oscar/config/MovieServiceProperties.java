@@ -7,8 +7,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "movie.service")
 public class MovieServiceProperties {
 
-    private String url = "http://localhost:8080";
-
     private String truststore;
 
     private String truststorePassword;

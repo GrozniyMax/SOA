@@ -12,6 +12,7 @@ import ru.itmo.soa.oscar.config.MovieFeignConfiguration;
 @FeignClient(
         name = "movie-service",
         url = "${movie.service.url}",
+        path = "${movie.service.path}",
         configuration = MovieFeignConfiguration.class)
 public interface MovieServiceFeignClient {
 

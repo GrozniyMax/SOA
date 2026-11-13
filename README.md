@@ -3,7 +3,7 @@
 Лабораторная работа №3: два веб-сервиса (Spring Boot, DDD) по OpenAPI-спецификациям
 на платформе Spring Cloud — Config Server, Eureka, Ribbon, API Gateway (Zuul) —
 и два экземпляра oscar-service за HAProxy. Второй сервис управляет «Оскарами»
-и вызывает первый через gateway по REST.
+и вызывает Movie напрямую по REST с клиентской балансировкой.
 
 **Вся платформа — единый стек: Spring Boot 2.3.12 + Spring Cloud Hoxton.SR12 + Java 11**
 (эпоха `javax`, Hibernate 5). Настоящие Zuul Proxy и Ribbon существуют
@@ -20,7 +20,7 @@ classpath-упаковку `appDist`; у каждого модуля свой `b
 | Модуль | Назначение | Упаковка | Порт | Путь |
 |--------|-----------|----------|------|------|
 | `movie-service` | CRUD + поиск/сортировка/пагинация коллекции `Movie` | dist (classpath) | 8080 | context-path `/movie-service` |
-| `oscar-service` (×2) | Операции с «Оскарами»; Feign-вызов movie-service через gateway | dist (classpath) | 8081 / 8082 | context-path `/oscar` |
+| `oscar-service` (×2) | Операции с «Оскарами» и прямой вызов Movie через Feign | dist (classpath) | 8081 / 8082 | context-path `/oscar` |
 | `config-server` | Spring Cloud Config Server, native-профиль (config-repo/ на FS) | dist (classpath) | 8888 | — |
 | `eureka-server` | Service Discovery (standalone) | dist (classpath) | 8761 | — |
 | `api-gateway` | Zuul Proxy + Ribbon + Eureka client | dist (classpath) | 8443 (внутри) | — |
@@ -34,7 +34,7 @@ classpath-упаковку `appDist`; у каждого модуля свой `b
 Клиенты ──► Nginx (HTTPS :8444 / :8443) ──► экземпляры Gateway (Zuul, HTTPS :8443)
                                                   ├─ /movie-service/** ── Ribbon ──► movie-service :8080
                                                   └─ /oscar/** ──► haproxy (roundrobin :9090) ──► экземпляры Oscar
-oscar-service ──(Feign, HTTPS)──► Nginx :8443/movie-service ──► Gateway
+oscar-service ──(Feign, Spring Cloud LoadBalancer, HTTP)──► экземпляры Movie :8080
 config-server :8888 ◄── movie и Oscar (bootstrap.yml, Hoxton)
 eureka-server :8761 ◄── movie, gateway, oscar-1 и oscar-2 регистрируются
 Nginx и HAProxy ──(DNS SRV)──► eureka-dns :8053 ──(HTTP)──► Eureka :8761
@@ -47,12 +47,13 @@ Nginx и HAProxy ──(DNS SRV)──► eureka-dns :8053 ──(HTTP)──►
   маршрут `/oscar` идёт в HAProxy, который берёт адреса и порты экземпляров `UP`
   из DNS-адаптера. HAProxy распределяет запросы по round-robin и проверяет TCP-порты.
 
-### Межсервисные вызовы и truststore
+### Межсервисный вызов Oscar → Movie
 
-Feign-клиент Oscar использует `https://frontend:8443/movie-service`. На этом порту
-Nginx предъявляет сертификат Gateway из `deploy/certs` и выбирает экземпляр Zuul
-из того же upstream, что и для браузера. Feign доверяет сертификату через
-`MOVIE_SERVICE_TRUSTSTORE=/certs/gateway-truststore.p12`.
+Feign обращается к `movie-service` по имени. Spring Cloud LoadBalancer в Oscar
+выбирает экземпляр по данным Eureka и отправляет HTTP-запрос напрямую в Movie.
+В Compose путь начинается с `/movie-service`. Для локальной разработки профиль
+`dev` использует `http://localhost:8080`. Явный `MOVIE_SERVICE_URL` задаёт
+адрес для запуска вне Compose.
 
 ## Единый стек: Boot 2.3 / Hoxton / Java 11
 
@@ -140,9 +141,7 @@ Nginx предъявляет сертификат Gateway из `deploy/certs` и
 Per-instance значения (задаются в `deploy/docker-compose.yml`): `CONFIG_URL` /
 `EUREKA_URL` (in-docker адреса), `MOVIE_PORT` / `OSCAR_PORT` (`8080` / `8081`/`8082`),
 `INSTANCE_ID` (`1`/`2` — различает инстансы в реестре Eureka и в заголовке
-`X-Instance`), `MOVIE_DB_*` / `OSCAR_DB_*`, `MOVIE_SERVICE_URL`
-(`https://frontend:8443/movie-service`), `MOVIE_SERVICE_TRUSTSTORE`
-(`/certs/gateway-truststore.p12` + `KEYSTORE_PASSWORD`),
+`X-Instance`), `MOVIE_DB_*` / `OSCAR_DB_*`, `MOVIE_SERVICE_PATH` (`/movie-service`),
 `MOVIE_HUMILIATE_BATCH_SIZE` (`10` — размер чанка режиссёров в батчевом humiliate).
 
 ## API и эндпоинты
@@ -231,7 +230,7 @@ PostgreSQL, Config Server и Eureka. HAProxy запускается после D
 - **HAProxy stats**: `http://localhost:8404/stats`
 
 Сертификаты gateway и frontend самоподписанные: в браузере нужно один раз принять
-сертификат `https://localhost:8444/` (клиенты API добавляют gateway в truststore — см. выше).
+сертификат `https://localhost:8444/`.
 Для Let's Encrypt: `DOMAIN=... make certs` (см. `deploy/gen-certs.sh`).
 
 ### Масштабирование Gateway
@@ -253,7 +252,7 @@ pytest + requests; проверяют **поднятый** стек (`make up` �
 
 - `test_eureka.py` — регистрация Movie, двух экземпляров Oscar и HTTPS-портов Gateway
 - `test_config_server.py` — `/movie-service/default` и `/oscar-service/default` отдают конфиг
-- `test_gateway.py` — маршруты Movie и Oscar на обоих HTTPS-портах Nginx, включая Feign-вызов Oscar через Zuul
+- `test_gateway.py` — маршруты Movie и Oscar на обоих HTTPS-портах Nginx, включая прямой вызов Movie из Oscar
 - `test_api_compat.py` — контракт лабы №2 через gateway: POST 201+Location, GET/PUT/DELETE, 404, 400/422
 - `test_haproxy.py` — roundrobin по `X-Instance`, отказ одного экземпляра и вывод из ротации через `OUT_OF_SERVICE` в Eureka
 
@@ -267,9 +266,9 @@ pytest + requests; проверяют **поднятый** стек (`make up` �
 |-----------|------------|
 | Config Service | `config-server` (native, `config-repo/`), подключение сервисов через `bootstrap.yml`  |
 | Service Discovery (Eureka) | `eureka-server` :8761; регистрация всех сервисов, instance-id с `INSTANCE_ID` |
-| Client-side Load Balancer (Ribbon) | Ribbon в api-gateway резолвит `movie-service` через Eureka |
+| Клиентская балансировка | Spring Cloud LoadBalancer в Oscar и Ribbon в Zuul используют Eureka для выбора экземпляров Movie |
 | API Gateway (Zuul) | `api-gateway` :8443 в сети Compose. Nginx балансирует экземпляры Zuul и публикует HTTPS |
-| Проксирование всех вызовов через gateway | маршруты Zuul `/movie-service/**` (Ribbon) и `/oscar` (→ haproxy); Feign oscar тоже идёт в gateway |
+| Внешние API через Gateway | Zuul маршрутизирует `/movie-service/**` через Ribbon и `/oscar/**` через HAProxy |
 | Второй экземпляр oscar + балансировка | oscar-1/oscar-2 в compose, HAProxy roundrobin + health-check, stats :8404 |
 | Совместимость API лабы №2 | контракт проверяется `tests/infra/test_api_compat.py` через gateway |
 
