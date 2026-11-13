@@ -36,3 +36,10 @@ def test_gateway_movie_search(session, gateway_url):
     # MoviePage: {items: [...], total, page, size}
     assert "items" in body and "total" in body
     assert isinstance(body["items"], list)
+
+
+@pytest.mark.parametrize("path", ["/movie-service/movies/genres", "/oscar/operators/losers"])
+def test_frontend_proxies_api(session, frontend_url, path):
+    response = session.get(f"{frontend_url}{path}", timeout=10)
+    assert response.status_code == 200
+    assert "application/json" in response.headers["Content-Type"]

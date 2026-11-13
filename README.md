@@ -23,25 +23,25 @@ classpath-упаковку `appDist`; у каждого модуля свой `b
 | `oscar-service` (×2) | Операции с «Оскарами»; Feign-вызов movie-service через gateway | dist (classpath) | 8081 / 8082 | context-path `/oscar` |
 | `config-server` | Spring Cloud Config Server, native-профиль (config-repo/ на FS) | dist (classpath) | 8888 | — |
 | `eureka-server` | Service Discovery (standalone) | dist (classpath) | 8761 | — |
-| `api-gateway` | Zuul Proxy + Ribbon + Eureka client; единственная входная точка API (HTTPS) | dist (classpath) | 8443 | — |
-| `eureka-dns` | DNS-адаптер реестра `OSCAR-SERVICE` | docker-образ | 8053/TCP (внутри) | — |
+| `api-gateway` | Zuul Proxy + Ribbon + Eureka client | dist (classpath) | 8443 (внутри) | — |
+| `eureka-dns` | DNS-адаптер реестра `API-GATEWAY` и `OSCAR-SERVICE` | docker-образ | 8053/TCP и UDP (внутри) | — |
 | `haproxy` | roundrobin-балансировка экземпляров Oscar из Eureka, stats-страница | docker-образ | 9090 (внутри), stats 8404 | `/oscar` |
-| `frontend` | nginx: статика Vite + same-origin проксирование на gateway | docker-образ | 8444 | TLS |
+| `frontend` | Nginx раздаёт SPA и балансирует запросы между Gateway | docker-образ | 8444 (SPA), 8443 (API) | TLS |
 
 ### Топология (docker)
 
 ```
-Интернет ──► frontend (nginx, HTTPS :8444) ──► api-gateway (Zuul, HTTPS :8443)
+Клиенты ──► Nginx (HTTPS :8444 / :8443) ──► экземпляры Gateway (Zuul, HTTPS :8443)
                                                   ├─ /movie-service/** ── Ribbon ──► movie-service :8080
                                                   └─ /oscar/** ──► haproxy (roundrobin :9090) ──► экземпляры Oscar
-oscar-service ──(Feign, HTTPS)──► gateway :8443/movie-service   # межсервисные вызовы тоже через Zuul
+oscar-service ──(Feign, HTTPS)──► Nginx :8443/movie-service ──► Gateway
 config-server :8888 ◄── movie и Oscar (bootstrap.yml, Hoxton)
 eureka-server :8761 ◄── movie, gateway, oscar-1 и oscar-2 регистрируются
-haproxy ──(DNS SRV по TCP)──► eureka-dns :8053 ──(HTTP)──► eureka-server :8761
+Nginx и HAProxy ──(DNS SRV)──► eureka-dns :8053 ──(HTTP)──► Eureka :8761
 ```
 
-- Все внешние запросы идут через gateway; напрямую сервисы наружу не публикуются
-  (movie/oscar без `ports` в compose).
+- Nginx принимает запросы к API на `8443` и `8444`. Он получает адреса экземпляров
+  `API-GATEWAY` со статусом `UP` из DNS и обновляет upstream без перезапуска.
 - Маршрут `/movie-service/**` gateway резолвит через Ribbon+Eureka (по service-id,
   `strip-prefix: false` — путь уходит целиком, т.к. movie слушает с context-path);
   маршрут `/oscar` идёт в HAProxy, который берёт адреса и порты экземпляров `UP`
@@ -49,11 +49,10 @@ haproxy ──(DNS SRV по TCP)──► eureka-dns :8053 ──(HTTP)──►
 
 ### Межсервисные вызовы и truststore
 
-Feign-клиент oscar-service (`MOVIE_SERVICE_URL`) направлен на gateway:
-`https://gateway:8443/movie-service` — по заданию **все** вызовы movie-service
-проксируются через Zuul. Сертификат gateway самоподписанный, поэтому Feign-клиенту
-задаётся truststore: `MOVIE_SERVICE_TRUSTSTORE=/certs/gateway-truststore.p12`
-(создаётся `deploy/gen-certs.sh` из сертификата gateway).
+Feign-клиент Oscar использует `https://frontend:8443/movie-service`. На этом порту
+Nginx предъявляет сертификат Gateway из `deploy/certs` и выбирает экземпляр Zuul
+из того же upstream, что и для браузера. Feign доверяет сертификату через
+`MOVIE_SERVICE_TRUSTSTORE=/certs/gateway-truststore.p12`.
 
 ## Единый стек: Boot 2.3 / Hoxton / Java 11
 
@@ -142,7 +141,7 @@ Per-instance значения (задаются в `deploy/docker-compose.yml`):
 `EUREKA_URL` (in-docker адреса), `MOVIE_PORT` / `OSCAR_PORT` (`8080` / `8081`/`8082`),
 `INSTANCE_ID` (`1`/`2` — различает инстансы в реестре Eureka и в заголовке
 `X-Instance`), `MOVIE_DB_*` / `OSCAR_DB_*`, `MOVIE_SERVICE_URL`
-(`https://gateway:8443/movie-service`), `MOVIE_SERVICE_TRUSTSTORE`
+(`https://frontend:8443/movie-service`), `MOVIE_SERVICE_TRUSTSTORE`
 (`/certs/gateway-truststore.p12` + `KEYSTORE_PASSWORD`),
 `MOVIE_HUMILIATE_BATCH_SIZE` (`10` — размер чанка режиссёров в батчевом humiliate).
 
@@ -226,7 +225,7 @@ PostgreSQL, Config Server и Eureka. HAProxy запускается после D
 
 - **frontend**: `https://localhost:8444/` (nginx проксирует `/movie-service/` и `/oscar/`
   на gateway same-origin; фронт собран с `VITE_MOVIE_API=/movie-service`, `VITE_OSCAR_API=/oscar`)
-- **gateway (API)**: `https://localhost:8443/movie-service/...`, `https://localhost:8443/oscar/...`
+- **API через Nginx**: `https://localhost:8443/movie-service/...`, `https://localhost:8443/oscar/...`
 - **Eureka dashboard**: `http://localhost:8761`
 - **Config Server**: `http://localhost:8888/<service>/default`
 - **HAProxy stats**: `http://localhost:8404/stats`
@@ -235,16 +234,26 @@ PostgreSQL, Config Server и Eureka. HAProxy запускается после D
 сертификат `https://localhost:8444/` (клиенты API добавляют gateway в truststore — см. выше).
 Для Let's Encrypt: `DOMAIN=... make certs` (см. `deploy/gen-certs.sh`).
 
+### Масштабирование Gateway
+
+```bash
+docker compose -f deploy/docker-compose.yml --env-file deploy/.env up -d --scale gateway=2
+```
+
+Каждый контейнер Gateway регистрирует в Eureka свой ID и внутренний HTTPS-порт.
+Nginx обнаруживает экземпляры через `_gateway._tcp.discovery.internal` и
+распределяет запросы по round-robin. Выбранный адрес виден в поле `upstream`
+в логах `frontend`. Чтобы вернуться к одному экземпляру, укажите `--scale gateway=1`.
+
 ## Инфраструктурные тесты (`tests/infra/`)
 
 pytest + requests; проверяют **поднятый** стек (`make up` → `make test-infra`).
 Базовые URL переопределяются `GATEWAY_URL`, `EUREKA_URL`, `CONFIG_URL`, `FRONTEND_URL`
 (по умолчанию — из `deploy/.env.example`). Покрывают:
 
-- `test_eureka.py` — оба сервиса зарегистрированы и UP; oscar — двумя инстансами
+- `test_eureka.py` — регистрация Movie, двух экземпляров Oscar и HTTPS-портов Gateway
 - `test_config_server.py` — `/movie-service/default` и `/oscar-service/default` отдают конфиг
-- `test_gateway.py` — проксирование movie и oscar через gateway; `GET /oscar/operators/losers`
-  доказывает цепочку oscar → gateway → movie (межсервисный вызов через Zuul)
+- `test_gateway.py` — маршруты Movie и Oscar на обоих HTTPS-портах Nginx, включая Feign-вызов Oscar через Zuul
 - `test_api_compat.py` — контракт лабы №2 через gateway: POST 201+Location, GET/PUT/DELETE, 404, 400/422
 - `test_haproxy.py` — roundrobin по `X-Instance`, отказ одного экземпляра и вывод из ротации через `OUT_OF_SERVICE` в Eureka
 
@@ -259,7 +268,7 @@ pytest + requests; проверяют **поднятый** стек (`make up` �
 | Config Service | `config-server` (native, `config-repo/`), подключение сервисов через `bootstrap.yml`  |
 | Service Discovery (Eureka) | `eureka-server` :8761; регистрация всех сервисов, instance-id с `INSTANCE_ID` |
 | Client-side Load Balancer (Ribbon) | Ribbon в api-gateway резолвит `movie-service` через Eureka |
-| API Gateway (Zuul) | `api-gateway` :8443 (единый стек Boot 2.3/Hoxton — последний стек с Zuul+Ribbon), единая точка входа HTTPS |
+| API Gateway (Zuul) | `api-gateway` :8443 в сети Compose. Nginx балансирует экземпляры Zuul и публикует HTTPS |
 | Проксирование всех вызовов через gateway | маршруты Zuul `/movie-service/**` (Ribbon) и `/oscar` (→ haproxy); Feign oscar тоже идёт в gateway |
 | Второй экземпляр oscar + балансировка | oscar-1/oscar-2 в compose, HAProxy roundrobin + health-check, stats :8404 |
 | Совместимость API лабы №2 | контракт проверяется `tests/infra/test_api_compat.py` через gateway |

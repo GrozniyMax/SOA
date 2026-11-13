@@ -97,7 +97,7 @@ services:
       OSCAR_DB_PASSWORD: ${DB_PASSWORD:-soa}
       OSCAR_PORT: 8081
       INSTANCE_ID: 1
-      MOVIE_SERVICE_URL: https://gateway:8443/movie-service
+      MOVIE_SERVICE_URL: https://frontend:8443/movie-service
       MOVIE_SERVICE_TRUSTSTORE: /certs/gateway-truststore.p12
       MOVIE_SERVICE_TRUSTSTORE_PASSWORD: ${KEYSTORE_PASSWORD:-changeit}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://localhost:8444}
@@ -124,7 +124,7 @@ services:
       OSCAR_DB_PASSWORD: ${DB_PASSWORD:-soa}
       OSCAR_PORT: 8082
       INSTANCE_ID: 2
-      MOVIE_SERVICE_URL: https://gateway:8443/movie-service
+      MOVIE_SERVICE_URL: https://frontend:8443/movie-service
       MOVIE_SERVICE_TRUSTSTORE: /certs/gateway-truststore.p12
       MOVIE_SERVICE_TRUSTSTORE_PASSWORD: ${KEYSTORE_PASSWORD:-changeit}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://localhost:8444}
@@ -134,6 +134,11 @@ services:
     build: ./eureka-dns
     environment:
       EUREKA_URL: http://eureka:8761/eureka
+    networks:
+      default:
+      discovery:
+        aliases: [discovery-dns]
+        ipv4_address: ${DISCOVERY_DNS_ADDRESS:-10.203.253.2}
     init: true
     depends_on:
       eureka-server:
@@ -146,6 +151,7 @@ services:
       - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     ports:
       - "${HAPROXY_STATS_PORT:-8404}:8404"
+    networks: [default, discovery]
     depends_on:
       - eureka-dns
     restart: unless-stopped
@@ -158,13 +164,12 @@ services:
       EUREKA_URL: http://eureka:8761/eureka
       OSCAR_URL: http://haproxy:9090/oscar
       SSL_ENABLED: "true"
+      EUREKA_INSTANCE_NON_SECURE_PORT_ENABLED: "false"
       KEYSTORE_PATH: /certs/gateway.p12
       KEYSTORE_PASSWORD: ${KEYSTORE_PASSWORD:-changeit}
       _JAVA_OPTIONS: ${GATEWAY_JAVA_OPTIONS:--Xmx320m -XX:MaxMetaspaceSize=128m}
     volumes:
       - ./certs:/certs:ro
-    ports:
-      - "${GATEWAY_PORT:-8443}:8443"
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -180,9 +185,18 @@ services:
       - ./certs:/etc/nginx/certs:ro
     ports:
       - "${FRONTEND_PORT:-8444}:8444"
+      - "${GATEWAY_PORT:-8443}:8443"
+    networks: [default, discovery]
     depends_on:
-      - gateway
+      - eureka-dns
     restart: unless-stopped
+
+networks:
+  discovery:
+    internal: true
+    ipam:
+      config:
+        - subnet: ${DISCOVERY_DNS_SUBNET:-10.203.253.0/28}
 
 volumes:
   pgdata:

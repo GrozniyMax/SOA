@@ -5,7 +5,6 @@ spring:
 server:
   port: ${SERVER_PORT:8443}
   ssl:
-    # Единственная точка входа: терминируем TLS (при SSL_ENABLED=false — plain HTTP).
     enabled: ${SSL_ENABLED:false}
     key-store: ${KEYSTORE_PATH:}
     key-store-password: ${KEYSTORE_PASSWORD:}
@@ -17,7 +16,10 @@ eureka:
       defaultZone: ${EUREKA_URL:http://eureka:8761/eureka}
     registry-fetch-interval-seconds: 5
   instance:
+    instance-id: ${HOSTNAME:${spring.cloud.client.hostname}}:${spring.application.name}:${server.port}
     prefer-ip-address: true
+    secure-port-enabled: ${server.ssl.enabled}
+    secure-port: ${server.port}
 
 zuul:
   # Проксировать исходный Host-заголовок (а не вычисленный из маршрута)

@@ -30,6 +30,16 @@ def test_movie_service_registered_up(session, eureka_url):
     assert len(up) >= 1, f"movie-service должен быть UP, got {[i['status'] for i in instances]}"
 
 
+def test_gateway_instances_publish_https_port(session, eureka_url):
+    instances = _apps_by_name(session, eureka_url)["API-GATEWAY"]["instance"]
+    up = [instance for instance in instances if instance["status"] == "UP"]
+    assert up
+    assert len({instance["ipAddr"] for instance in up}) == len(up)
+    for instance in up:
+        assert instance["securePort"] == {"$": 8443, "@enabled": "true"}
+        assert instance["port"]["@enabled"] == "false"
+
+
 def test_oscar_service_two_up_instances(session, eureka_url):
     apps = _apps_by_name(session, eureka_url)
     assert "OSCAR-SERVICE" in apps

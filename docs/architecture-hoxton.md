@@ -13,16 +13,16 @@
 |---|---|---|---|
 | **config-server** | Config Service — централизованная конфигурация | Spring Cloud Config (native, `config-repo/`) | 8888 |
 | **eureka-server** | Service Discovery — реестр сервисов | Netflix Eureka | 8761 |
-| **api-gateway** | API Gateway — единая публичная точка входа | **Zuul Proxy + Ribbon** (единый стек Boot 2.3, Java 11) | 8443 (TLS) |
+| **api-gateway** | Маршрутизация запросов к Movie и Oscar | **Zuul Proxy + Ribbon** (Boot 2.3, Java 11) | 8443 (TLS, внутр.) |
 | **movie-service** | «Вызываемый» сервис | Spring Boot 2.3, classpath-дистрибутив | 8080 (внутр.) |
 | **oscar-service ×2** | «Вызывающий» сервис, 2 экземпляра | Spring Boot 2.3, classpath-дистрибутивы | 8081/8082 (внутр.) |
-| **eureka-dns** | DNS-записи для экземпляров Oscar из реестра Eureka | DNS SRV, A и AAAA | 8053/TCP (внутр.) |
+| **eureka-dns** | DNS-записи для экземпляров Oscar и Gateway из Eureka | DNS SRV, A и AAAA | 8053/TCP и UDP (внутр.) |
 | **haproxy** | Балансировка экземпляров Oscar | HAProxy, DNS `server-template`, roundrobin | 9090 (внутр.), stats 8404 |
-| **frontend** | SPA + reverse proxy | nginx, отдаёт `frontend/dist`, проксирует API на gateway | 8444 (TLS) |
+| **frontend** | SPA и балансировка API между экземплярами Gateway | Nginx, динамический upstream по DNS SRV | 8444 (SPA), 8443 (API) |
 | **postgres** | Хранилище movie + oscar | PostgreSQL 16 | 5432 (внутр.) |
 
-Frontend (`:8444`) и Gateway (`:8443`) принимают HTTPS. Gateway обращается к Movie
-и HAProxy по HTTP.
+Nginx принимает HTTPS на `:8444` и `:8443` и подключается к Gateway по HTTPS.
+Gateway обращается к Movie и HAProxy по HTTP.
 
 ## Маршруты запросов
 
@@ -30,7 +30,8 @@ Frontend (`:8444`) и Gateway (`:8443`) принимают HTTPS. Gateway обр
 ```
 Browser → https://host:8444 (nginx)
    ├─ статика: SPA (frontend/dist)
-   └─ /movie-service/**, /oscar/** → proxy_pass https://gateway:8443 (TLS, self-signed)
+   └─ /movie-service/**, /oscar/** → Gateway из Eureka (HTTPS)
+API-клиент → https://host:8443 (nginx) → тот же пул Gateway (HTTPS)
 ```
 
 ### Через Zuul (gateway)
@@ -45,11 +46,12 @@ Browser → https://host:8444 (nginx)
 
 ### Межсервисный вызов (oscar → movie)
 По заданию все запросы к сервисам идут через gateway: Feign-клиент oscar настроен на
-`MOVIE_SERVICE_URL=https://gateway:8443/movie-service`. TLS gateway — self-signed,
-поэтому oscar доверяет ему через `MOVIE_SERVICE_TRUSTSTORE=/certs/gateway-truststore.p12`
-(сертификат gateway импортирован в truststore при `make certs`).
+`MOVIE_SERVICE_URL=https://frontend:8443/movie-service`. Nginx предъявляет
+сертификат Gateway, которому Oscar доверяет через
+`MOVIE_SERVICE_TRUSTSTORE=/certs/gateway-truststore.p12`.
 
-Цепочка: `oscar → (Feign, TLS, truststore) → gateway → (Ribbon/Eureka) → movie`.
+Цепочка `Oscar → Nginx → Gateway → Movie` использует Feign и HTTPS на первом
+участке, затем HTTPS до Gateway и балансировку Ribbon до Movie.
 
 ## Единый стек Boot 2.3 / Hoxton
 
@@ -121,13 +123,16 @@ legacy-остров» проект переведён на Hoxton **целико
 инстансов oscar: `oscar-service:1` и `oscar-service:2` (`INSTANCE_ID`), по ним же
 балансировка проверяется в тестах; свои ответы инстанс помечает `X-Instance`.
 
-### Обнаружение экземпляров Oscar в HAProxy
+### Обнаружение Gateway и Oscar через DNS
 
-`eureka-dns` опрашивает `/eureka/apps/OSCAR-SERVICE` каждые 5 секунд. Для каждого
-экземпляра `UP` с включённым HTTP-портом адаптер отдаёт запись SRV с портом из
-реестра и запись A или AAAA с IP-адресом. HAProxy запрашивает
-`_oscar._tcp.discovery.internal` у адаптера по TCP, заполняет до 10 слотов
-`server-template` и проверяет TCP-порты экземпляров.
+`eureka-dns` опрашивает `OSCAR-SERVICE` и `API-GATEWAY` в Eureka каждые 5 секунд.
+Для каждого экземпляра `UP` адаптер публикует запись SRV с портом и запись A
+или AAAA с IP-адресом. HAProxy запрашивает `_oscar._tcp.discovery.internal`
+по TCP, заполняет до 10 слотов `server-template` и проверяет TCP-порты.
+Nginx запрашивает `_gateway._tcp.discovery.internal`, который содержит
+HTTPS-порты Gateway. Nginx применяет изменения к upstream без перезапуска.
+У адаптера фиксированный адрес в отдельной сети Compose `discovery`, чтобы оба
+прокси могли продолжать использовать его после пересоздания контейнера.
 
 Смена статуса на `OUT_OF_SERVICE` убирает экземпляр из DNS после обновления
 реестра. При временной ошибке Eureka адаптер использует последний успешный
@@ -162,8 +167,9 @@ make logs / ps / restart / down / clean / purge   # purge = down -v + удале
 ```
 
 Movie и Oscar ждут готовности PostgreSQL, Config Server и Eureka. DNS-адаптер
-ждёт готовности Eureka, а HAProxy стартует после адаптера. Gateway и frontend
-запускаются после HAProxy. Java-контейнеры используют JRE 11.
+ждёт готовности Eureka. Nginx и HAProxy запускаются после адаптера и обнаруживают
+экземпляры по мере регистрации. Gateway ждёт запуска HAProxy и готовности Eureka.
+Java-контейнеры используют JRE 11.
 
 ## Инфраструктурные тесты (`tests/infra/`)
 
@@ -183,6 +189,6 @@ pytest + requests, `make test-infra` (стек должен быть подня�
 | Config Service | spring-cloud-config-server, native `config-repo/`; клиенты через `bootstrap.yml` |
 | Service Discovery (Eureka) | eureka-server; все сервисы — eureka-клиенты |
 | Load Balancer (Ribbon) | Ribbon в Zuul-маршрутах gateway (service-id маршруты) |
-| API Gateway (Zuul Proxy) | api-gateway: `@EnableZuulProxy`, публичный HTTPS :8443; Zuul+Ribbon есть только в Hoxton — потому весь стек на Boot 2.3 |
+| API Gateway (Zuul Proxy) | `@EnableZuulProxy`, внутренний HTTPS `:8443`. Nginx балансирует экземпляры и принимает внешние запросы |
 | Второй экземпляр вызывающего сервиса + Haproxy | oscar-1 + oscar-2 за HAProxy (roundrobin), различимы по `X-Instance` |
 | Полная совместимость с API лабы №2 | пути `/movie-service/**`, `/oscar/**` и контракты не изменены; покрыто test_api_compat |
