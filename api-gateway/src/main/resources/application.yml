@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: api-gateway
+
+server:
+  port: ${SERVER_PORT:8443}
+  ssl:
+    enabled: ${SSL_ENABLED:false}
+    key-store: ${KEYSTORE_PATH:}
+    key-store-password: ${KEYSTORE_PASSWORD:}
+    key-store-type: PKCS12
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://eureka:8761/eureka}
+    registry-fetch-interval-seconds: 5
+  instance:
+    instance-id: ${HOSTNAME:${spring.cloud.client.hostname}}:${spring.application.name}:${server.port}
+    prefer-ip-address: true
+    secure-port-enabled: ${server.ssl.enabled}
+    secure-port: ${server.port}
+
+zuul:
+  # Проксировать исходный Host-заголовок (а не вычисленный из маршрута)
+  add-host-header: true
+  routes:
+    movie-service:
+      path: /movie-service/**
+      service-id: MOVIE-SERVICE
+      # У movie есть context-path /movie-service, поэтому префикс не срезаем (иначе 404).
+      strip-prefix: false
+    oscar-service:
+      path: /oscar/**
+      # Zuul срезает /oscar; URL кончается на /oscar (context-path oscar) — дефолт ок.
+      url: ${OSCAR_URL:http://haproxy:9090/oscar}
+
+# ReadTimeout увеличен: батч humiliate бывает медленным.
+movie-service:
+  ribbon:
+    ReadTimeout: 10000
+    ConnectTimeout: 3000

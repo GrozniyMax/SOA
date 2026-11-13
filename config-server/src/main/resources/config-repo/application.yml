@@ -1,0 +1,18 @@
+# Общий remote-конфиг клиентов; из-за override-none приоритет ниже локального yml.
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    open-in-view: false
+  cloud:
+    config:
+      # override-none=true: remote — дефолт низшего приоритета, локальный yml/dev выигрывают.
+      override-none: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
+  instance:
+    # В контейнерах регистрироваться по IP, а не по hostname контейнера.
+    prefer-ip-address: true

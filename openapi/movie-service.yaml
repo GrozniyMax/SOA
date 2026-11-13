@@ -220,6 +220,38 @@ paths:
           $ref: '#/components/responses/NotAcceptable'
         '500':
           $ref: '#/components/responses/InternalServerError'
+  /movies/directors/humiliate:
+    post:
+      tags:
+        - Movies
+      operationId: humiliateDirectors
+      summary: Отозвать все Оскары у фильмов перечисленных режиссёров
+      description: |
+        Одним запросом (в одной транзакции) отбирает все «Оскары» у фильмов,
+        чьи режиссёры перечислены в теле запроса. Для каждого запрошенного
+        режиссёра возвращает суммарное количество отозванных Оскаров
+        (0, если у его фильмов наград не было или режиссёр неизвестен).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectorsHumiliateRequest'
+      responses:
+        '200':
+          description: Оскары отозваны, возвращена сводка по каждому запрошенному режиссёру
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectorsHumiliationResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
   /movies/genres:
     get:
       tags:
@@ -518,6 +550,48 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/MovieGenre'
+    DirectorsHumiliateRequest:
+      type: object
+      description: Запрос на отзыв Оскаров у фильмов перечисленных режиссёров
+      required:
+        - directors
+      properties:
+        directors:
+          type: array
+          description: Имена режиссёров, у фильмов которых отбираются Оскары
+          minItems: 1
+          items:
+            type: string
+            minLength: 1
+      example:
+        directors:
+          - Christopher Nolan
+          - Stanley Kubrick
+    DirectorsHumiliationResult:
+      type: object
+      description: Сводка отозванных Оскаров, по одной записи на каждого запрошенного режиссёра
+      required:
+        - results
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DirectorsHumiliation'
+    DirectorsHumiliation:
+      type: object
+      description: Количество Оскаров, отозванных у фильмов одного режиссёра
+      required:
+        - director
+        - revokedOscars
+      properties:
+        director:
+          type: string
+          description: Имя режиссёра из запроса
+        revokedOscars:
+          type: integer
+          format: int32
+          description: Суммарное количество отозванных Оскаров
+          minimum: 0
     ApiError:
       type: object
       description: Описание ошибки

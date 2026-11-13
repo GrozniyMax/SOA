@@ -1,0 +1,12 @@
+plugins {
+    // Автозагрузка JDK 11 для toolchain (foojay resolver).
+    id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
+}
+
+rootProject.name = "soa"
+
+include("movie-service")
+include("oscar-service")
+include("config-server")
+include("eureka-server")
+include("api-gateway")

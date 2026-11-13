@@ -1,0 +1,8 @@
+*
+!api-gateway/build/dist/lib/
+!config-server/build/dist/lib/
+!eureka-server/build/dist/lib/
+!movie-service/build/dist/lib/
+!oscar-service/build/dist/lib/
+!frontend/dist/
+!deploy/nginx.conf

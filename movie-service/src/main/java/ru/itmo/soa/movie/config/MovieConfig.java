@@ -1,0 +1,9 @@
+package ru.itmo.soa.movie.config;
+
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+@EnableConfigurationProperties(MovieProperties.class)
+public class MovieConfig {
+}

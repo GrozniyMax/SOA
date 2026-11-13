@@ -1,0 +1,9 @@
+# Bootstrap : имя и адрес Config Server задаём до основного yml.
+spring:
+  application:
+    name: movie-service
+  cloud:
+    config:
+      uri: ${CONFIG_URL:http://localhost:8888}
+      # Стартуем и без config-server; override-none задаётся в config-repo/application.yml.
+      fail-fast: false
