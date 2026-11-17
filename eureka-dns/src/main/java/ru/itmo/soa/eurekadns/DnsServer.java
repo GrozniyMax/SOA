@@ -10,6 +10,8 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -37,7 +39,10 @@ public final class DnsServer {
     }
 
     public void start() throws IOException {
-        tcpServer = new ServerSocket(requestedPort);
+        // Явный IPv4-wildcard: в Linux-контейнере new ServerSocket(port) иначе биндится
+        // на IPv6 [::], и IPv4-клиенты (HAProxy tcp@discovery-dns) не могут подключиться.
+        tcpServer = new ServerSocket();
+        tcpServer.bind(new InetSocketAddress(InetAddress.getByName("0.0.0.0"), requestedPort));
         udpServer = new DatagramSocket(tcpServer.getLocalPort());
         tcpThread = new Thread(this::serveTcp, "dns-tcp");
         udpThread = new Thread(this::serveUdp, "dns-udp");
@@ -60,27 +65,43 @@ public final class DnsServer {
 
     private void serveTcp() {
         while (!Thread.currentThread().isInterrupted()) {
-            try (Socket socket = tcpServer.accept()) {
-                socket.setSoTimeout(10_000);
-                DataInputStream in = new DataInputStream(socket.getInputStream());
-                DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                // HAProxy шлёт несколько length-prefixed запросов на одном соединении.
-                while (true) {
-                    int size = in.readUnsignedShort();
-                    byte[] wire = new byte[size];
-                    in.readFully(wire);
-                    byte[] response = resolver.apply(new Message(wire)).toWire();
-                    out.writeShort(response.length);
-                    out.write(response);
-                    out.flush();
-                }
-            } catch (SocketException | EOFException e) {
-                // клиент закрыл соединение — ждём следующее
-            } catch (IOException | RuntimeException e) {
+            try {
+                Socket socket = tcpServer.accept();
+                // Каждый TCP-клиент обрабатывается в своём потоке: иначе одно долгоживущее
+                // соединение (HAProxy/nginx держат его открытым) монополизирует accept().
+                Thread handler = new Thread(() -> handleTcpClient(socket), "dns-tcp-client");
+                handler.setDaemon(true);
+                handler.start();
+            } catch (IOException e) {
                 if (Thread.currentThread().isInterrupted()) {
                     return;
                 }
             }
+        }
+    }
+
+    private void handleTcpClient(Socket socket) {
+        try (Socket s = socket) {
+            s.setSoTimeout(10_000);
+            DataInputStream in = new DataInputStream(s.getInputStream());
+            DataOutputStream out = new DataOutputStream(s.getOutputStream());
+            // HAProxy/nginx шлют несколько length-prefixed запросов на одном соединении.
+            while (true) {
+                int size = in.readUnsignedShort();
+                byte[] wire = new byte[size];
+                in.readFully(wire);
+                byte[] response = resolver.apply(new Message(wire)).toWire();
+                out.writeShort(response.length);
+                out.write(response);
+                out.flush();
+            }
+        } catch (SocketException | EOFException e) {
+            // клиент закрыл соединение — ждём следующее
+        } catch (IOException | RuntimeException e) {
+            if (Thread.currentThread().isInterrupted()) {
+                return;
+            }
+            e.printStackTrace();
         }
     }
 

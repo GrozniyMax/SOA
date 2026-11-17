@@ -2,6 +2,7 @@ package ru.itmo.soa.eurekadns;
 
 import org.xbill.DNS.ARecord;
 import org.xbill.DNS.DClass;
+import org.xbill.DNS.Flags;
 import org.xbill.DNS.Message;
 import org.xbill.DNS.Name;
 import org.xbill.DNS.Rcode;
@@ -35,6 +36,7 @@ public final class DiscoveryResolver {
         int qtype = question.getType();
 
         Message response = new Message(query.getHeader().getID());
+        response.getHeader().setFlag(Flags.QR);
         response.addRecord(question, Section.QUESTION);
 
         String service = serviceFromSrv(qname);
@@ -67,7 +69,9 @@ public final class DiscoveryResolver {
     }
 
     private void resolveAddress(Message response, String qname, int qtype) {
-        if (qtype != Type.A && qtype != Type.ANY) {
+        boolean wantV4 = qtype == Type.A || qtype == Type.ANY;
+        boolean wantV6 = qtype == Type.AAAA || qtype == Type.ANY;
+        if (!wantV4 && !wantV6) {
             response.getHeader().setRcode(Rcode.NXDOMAIN);
             return;
         }
@@ -82,8 +86,12 @@ public final class DiscoveryResolver {
             }
             for (Instance instance : snapshot.instances()) {
                 if (targetName(service, instance).equals(qname)) {
-                    response.addRecord(new ARecord(name(qname), DClass.IN, TTL,
-                            instance.address()), Section.ANSWER);
+                    // AAAA-запрос при IPv4-only инстансе: пустой NOERROR (без A-записи в ANSWER),
+                    // иначе nginx ругается "unexpected A record". A-запись — только на A/ANY.
+                    if (wantV4) {
+                        response.addRecord(new ARecord(name(qname), DClass.IN, TTL,
+                                instance.address()), Section.ANSWER);
+                    }
                     return;
                 }
             }

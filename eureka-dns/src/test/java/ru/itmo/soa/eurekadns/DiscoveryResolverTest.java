@@ -47,6 +47,8 @@ class DiscoveryResolverTest {
         Message response = resolver(30_000).resolve(query("_oscar._tcp." + ZONE, Type.SRV));
 
         assertEquals(Rcode.NOERROR, response.getRcode());
+        assertTrue(response.getHeader().getFlag(org.xbill.DNS.Flags.QR),
+                "ответ должен иметь установленный флаг QR (иначе nginx отвергает его)");
         List<Record> answer = response.getSection(Section.ANSWER);
         assertEquals(2, answer.size());
         assertTrue(answer.stream().allMatch(r -> r instanceof SRVRecord));
@@ -73,10 +75,31 @@ class DiscoveryResolverTest {
         Message response = resolver(30_000).resolve(query(hostname, Type.A));
 
         assertEquals(Rcode.NOERROR, response.getRcode());
+        assertTrue(response.getHeader().getFlag(org.xbill.DNS.Flags.QR),
+                "ответ должен иметь установленный флаг QR (иначе nginx отвергает его)");
         List<Record> answer = response.getSection(Section.ANSWER);
         assertEquals(1, answer.size());
         ARecord a = (ARecord) answer.get(0);
         assertEquals(ip("10.0.0.11"), a.getAddress());
+    }
+
+    @Test
+    void aaaaQueryReturnsEmptyNoerrorForIpv4Instance() throws Exception {
+        // Nginx шлёт AAAA (type 28) и строго ждёт AAAA-запись; A-запись в ANSWER на AAAA-запрос
+        // он считает "unexpected A record". Для IPv4-only инстанса отвечаем пустым NOERROR —
+        // тогда nginx понимает, что AAAA нет, и использует A-запись.
+        String id = "oscar-1:oscar-service:8081";
+        snapshots.put("oscar", new Snapshot(now(), List.of(
+                new Instance(id, ip("10.0.0.11"), 8081))));
+        String hostname = targetName("oscar", id);
+
+        Message response = resolver(30_000).resolve(query(hostname, Type.AAAA));
+
+        assertEquals(Rcode.NOERROR, response.getRcode());
+        assertTrue(response.getHeader().getFlag(org.xbill.DNS.Flags.QR),
+                "ответ должен иметь установленный флаг QR");
+        assertEquals(0, response.getSection(Section.ANSWER).size(),
+                "AAAA-запрос для IPv4-инстанса должен вернуть пустой NOERROR, а не A-запись");
     }
 
     @Test

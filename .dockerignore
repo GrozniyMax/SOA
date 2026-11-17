@@ -4,5 +4,6 @@
 !eureka-server/build/dist/lib/
 !movie-service/build/dist/lib/
 !oscar-service/build/dist/lib/
+!eureka-dns/build/dist/lib/
 !frontend/dist/
 !deploy/nginx.conf
