@@ -19,7 +19,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Воспроизводит реальный сценарий gateway из контейнера: A-запрос по SRV-target. */
 class GatewayAResolutionTest {
 
     @Test
@@ -31,13 +30,11 @@ class GatewayAResolutionTest {
         EurekaRegistry registry = new EurekaRegistry(System::currentTimeMillis, snapshots);
         DiscoveryResolver resolver = new DiscoveryResolver(registry, 30_000);
 
-        // SRV-ответ gateway должен вернуть target.
         Message srv = resolver.resolve(query("_gateway._tcp.discovery.internal.", Type.SRV));
         assertEquals(Rcode.NOERROR, srv.getRcode());
         SRVRecord srvRec = (SRVRecord) srv.getSection(Section.ANSWER).get(0);
         String target = srvRec.getTarget().toString();
 
-        // A-запрос по этому target должен вернуть адрес.
         Message a = resolver.resolve(query(target, Type.A));
         assertEquals(Rcode.NOERROR, a.getRcode(), "A-запрос для " + target + " должен быть NOERROR");
         List<Record> ans = a.getSection(Section.ANSWER);

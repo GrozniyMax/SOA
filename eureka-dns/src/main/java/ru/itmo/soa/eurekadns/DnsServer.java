@@ -18,11 +18,9 @@ import java.net.SocketException;
 import java.util.function.UnaryOperator;
 
 /**
- * DNS-сервер поверх DiscoveryResolver. Слушает TCP (length-prefix, как это делает HAProxy)
- * и UDP (truncation с флагом TC, как того ждёт Nginx) на одном порту.
+ * DNS-сервер поверх DiscoveryResolver: TCP (length-prefix) и UDP (truncation с TC-флагом).
  */
 public final class DnsServer {
-    /** Максимальный UDP-ответ в байтах; больший усекается и помечается TC. */
     private static final int UDP_MAX = 512;
 
     private final UnaryOperator<Message> resolver;
@@ -39,8 +37,7 @@ public final class DnsServer {
     }
 
     public void start() throws IOException {
-        // Явный IPv4-wildcard: в Linux-контейнере new ServerSocket(port) иначе биндится
-        // на IPv6 [::], и IPv4-клиенты (HAProxy tcp@discovery-dns) не могут подключиться.
+        // Биндимся на IPv4: иначе в контейнере сокет слушает [::] и не отвечает IPv4-клиентам.
         tcpServer = new ServerSocket();
         tcpServer.bind(new InetSocketAddress(InetAddress.getByName("0.0.0.0"), requestedPort));
         udpServer = new DatagramSocket(tcpServer.getLocalPort());
@@ -67,8 +64,7 @@ public final class DnsServer {
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 Socket socket = tcpServer.accept();
-                // Каждый TCP-клиент обрабатывается в своём потоке: иначе одно долгоживущее
-                // соединение (HAProxy/nginx держат его открытым) монополизирует accept().
+                // Свой поток на клиента: долгоживущее соединение иначе блокирует accept().
                 Thread handler = new Thread(() -> handleTcpClient(socket), "dns-tcp-client");
                 handler.setDaemon(true);
                 handler.start();
@@ -85,7 +81,6 @@ public final class DnsServer {
             s.setSoTimeout(10_000);
             DataInputStream in = new DataInputStream(s.getInputStream());
             DataOutputStream out = new DataOutputStream(s.getOutputStream());
-            // HAProxy/nginx шлют несколько length-prefixed запросов на одном соединении.
             while (true) {
                 int size = in.readUnsignedShort();
                 byte[] wire = new byte[size];
@@ -96,7 +91,7 @@ public final class DnsServer {
                 out.flush();
             }
         } catch (SocketException | EOFException e) {
-            // клиент закрыл соединение — ждём следующее
+            // клиент закрыл соединение
         } catch (IOException | RuntimeException e) {
             if (Thread.currentThread().isInterrupted()) {
                 return;
@@ -114,7 +109,7 @@ public final class DnsServer {
                 byte[] query = java.util.Arrays.copyOf(packet.getData(), packet.getLength());
                 byte[] response = resolver.apply(new Message(query)).toWire();
                 if (response.length > UDP_MAX) {
-                    // Усечённый ответ: только вопрос + флаг TC, клиент переспросит по TCP.
+                    // Ответ >512 байт: усекаем и ставим TC, клиент переспросит по TCP.
                     Message truncated = new Message(query);
                     truncated.getHeader().setFlag(Flags.TC);
                     truncated.removeAllRecords(Section.ANSWER);

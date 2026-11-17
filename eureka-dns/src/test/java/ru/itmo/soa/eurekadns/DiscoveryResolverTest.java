@@ -85,9 +85,7 @@ class DiscoveryResolverTest {
 
     @Test
     void aaaaQueryReturnsEmptyNoerrorForIpv4Instance() throws Exception {
-        // Nginx шлёт AAAA (type 28) и строго ждёт AAAA-запись; A-запись в ANSWER на AAAA-запрос
-        // он считает "unexpected A record". Для IPv4-only инстанса отвечаем пустым NOERROR —
-        // тогда nginx понимает, что AAAA нет, и использует A-запись.
+        // AAAA-запрос для IPv4-only должен дать пустой NOERROR, а не A-запись — nginx её отвергает.
         String id = "oscar-1:oscar-service:8081";
         snapshots.put("oscar", new Snapshot(now(), List.of(
                 new Instance(id, ip("10.0.0.11"), 8081))));
@@ -137,7 +135,6 @@ class DiscoveryResolverTest {
         return InetAddress.getByName(s);
     }
 
-    /** Хостнейм инстанса, как его строит резолвер (для A-запросов). */
     private static String targetName(String service, String instanceId) {
         return service + "-" + sha256hex(instanceId) + "." + ZONE;
     }

@@ -2,7 +2,7 @@ package ru.itmo.soa.eurekadns;
 
 import java.util.List;
 
-/** Снапшот инстансов одного сервиса: момент обновления + список UP-инстансов. */
+/** Момент обновления + список UP-инстансов одного сервиса. */
 public final class Snapshot {
     private final long updatedAtMillis;
     private final List<Instance> instances;

@@ -1,6 +1,6 @@
 package ru.itmo.soa.eurekadns;
 
-/** Описание одного сервиса для DNS: имя приложения в Eureka и поле порта ("port"|"securePort"). */
+/** Приложение в Eureka и поле порта ("port"|"securePort") для DNS-сервиса. */
 public final class ServiceSpec {
     private final String appName;
     private final String portField;

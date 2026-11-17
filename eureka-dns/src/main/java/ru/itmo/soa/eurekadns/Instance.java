@@ -2,7 +2,7 @@ package ru.itmo.soa.eurekadns;
 
 import java.net.InetAddress;
 
-/** Один UP-инстанс сервиса, полученный из Eureka. */
+/** UP-инстанс сервиса из Eureka. */
 public final class Instance {
     private final String instanceId;
     private final InetAddress address;

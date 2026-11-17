@@ -1,12 +1,10 @@
 package ru.itmo.soa.eurekadns;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/**
- * Фоновый опрос Eureka: для каждого сервиса периодически перечитывает список UP-инстансов
- * и обновляет снапшот в registry. Ошибки одиночного опроса не роняют цикл.
- */
+/** Фоновый опрос Eureka, обновляющий снапшоты в registry. */
 public final class EurekaRefresher {
     private final EurekaClient client;
     private final EurekaRegistry registry;
@@ -46,7 +44,7 @@ public final class EurekaRefresher {
                 String service = entry.getKey();
                 ServiceSpec spec = entry.getValue();
                 try {
-                    java.util.List<Instance> instances = client.fetch(spec.appName(), spec.portField());
+                    List<Instance> instances = client.fetch(spec.appName(), spec.portField());
                     registry.update(service, instances, registry.nowMillis());
                 } catch (Exception e) {
                     System.err.println("Could not refresh " + spec.appName() + ": "

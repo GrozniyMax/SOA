@@ -1,10 +1,11 @@
 package ru.itmo.soa.eurekadns;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.LongSupplier;
 
-/** Хранилище снапшотов по имени сервиса (oscar, gateway) с часами для проверки свежести. */
+/** Снапшоты по имени сервиса с часами для проверки свежести. */
 public final class EurekaRegistry {
     private final LongSupplier clock;
     private final Map<String, Snapshot> snapshots;
@@ -18,7 +19,7 @@ public final class EurekaRegistry {
         return snapshots.get(service);
     }
 
-    public void update(String service, java.util.List<Instance> instances, long updatedAtMillis) {
+    public void update(String service, List<Instance> instances, long updatedAtMillis) {
         snapshots.put(service, new Snapshot(updatedAtMillis, instances));
     }
 

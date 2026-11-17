@@ -15,7 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-/** Резолвит DNS-запросы (SRV/A) из снапшотов Eureka. */
+/** Строит DNS-ответы (SRV/A) из снапшотов Eureka. */
 public final class DiscoveryResolver {
     private static final String ZONE = "discovery.internal.";
     private static final String SRV_PREFIX = "_";
@@ -86,8 +86,7 @@ public final class DiscoveryResolver {
             }
             for (Instance instance : snapshot.instances()) {
                 if (targetName(service, instance).equals(qname)) {
-                    // AAAA-запрос при IPv4-only инстансе: пустой NOERROR (без A-записи в ANSWER),
-                    // иначе nginx ругается "unexpected A record". A-запись — только на A/ANY.
+                    // AAAA-запрос для IPv4-only: пустой NOERROR, иначе nginx жалуется на A-запись.
                     if (wantV4) {
                         response.addRecord(new ARecord(name(qname), DClass.IN, TTL,
                                 instance.address()), Section.ANSWER);
@@ -99,7 +98,6 @@ public final class DiscoveryResolver {
         response.getHeader().setRcode(Rcode.NXDOMAIN);
     }
 
-    /** "_oscar._tcp.discovery.internal." → "oscar", иначе null. Имя — с завершающей точкой. */
     private static String serviceFromSrv(String qname) {
         if (!qname.startsWith(SRV_PREFIX) || !qname.endsWith(TCP_SUFFIX)) {
             return null;
@@ -107,7 +105,6 @@ public final class DiscoveryResolver {
         return qname.substring(SRV_PREFIX.length(), qname.length() - TCP_SUFFIX.length());
     }
 
-    /** Владелец SRV-записи = сам запрошенный "_{service}._tcp.{zone}". */
     private static Name questionName(String service) {
         return name(SRV_PREFIX + service + TCP_SUFFIX);
     }
@@ -116,7 +113,6 @@ public final class DiscoveryResolver {
         return service + "-" + hash(instance.instanceId()) + "." + ZONE;
     }
 
-    /** SHA-256(instanceId), первые 24 hex-символа — стабильное уникальное имя инстанса. */
     private static String hash(String value) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

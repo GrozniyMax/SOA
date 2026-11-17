@@ -14,7 +14,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-/** HTTP-клиент Eureka: опрашивает /apps/{app} и возвращает UP-инстансы с выбранным портом. */
+/** HTTP-клиент Eureka: возвращает UP-инстансы /apps/{app} с выбранным портом. */
 public final class EurekaClient {
     private static final Duration TIMEOUT = Duration.ofSeconds(3);
 
@@ -59,7 +59,6 @@ public final class EurekaClient {
         if (instanceEl.isJsonArray()) {
             array = instanceEl.getAsJsonArray();
         } else if (instanceEl.isJsonObject()) {
-            // Eureka отдаёт объект, когда инстанс один.
             array = new JsonArray();
             array.add(instanceEl.getAsJsonObject());
         } else {

@@ -4,19 +4,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Точка входа eureka-dns: публикует Eureka-инстансы как DNS SRV/A записи.
- *
- * <p>Читает переменные окружения:
- * <ul>
- *   <li>{@code EUREKA_URL} — базовый URL Eureka (по умолчанию http://localhost:8761/eureka);</li>
- *   <li>{@code DNS_PORT} — порт DNS-сервера (по умолчанию 8053);</li>
- *   <li>{@code POLL_INTERVAL_MS} — период опроса Eureka (по умолчанию 5000).</li>
- * </ul>
- */
+/** Точка входа eureka-dns: публикует Eureka-инстансы как DNS SRV/A записи. */
 public final class EurekaDnsApplication {
 
-    /** Локальное имя сервиса (ключ DNS-имён) → приложение в Eureka + поле порта. */
     private static Map<String, ServiceSpec> defaultServices() {
         Map<String, ServiceSpec> services = new LinkedHashMap<>();
         services.put("oscar", new ServiceSpec("OSCAR-SERVICE", "port"));
@@ -49,8 +39,7 @@ public final class EurekaDnsApplication {
         System.out.println("eureka-dns listening on port " + dnsServer.getPort()
                 + ", polling " + eurekaUrl + " every " + pollInterval + "ms");
 
-        // Потоки DNS-сервера и рефрешера — daemon: держим главный поток живым,
-        // иначе JVM завершится сразу после старта.
+        // Потоки сервера — daemon: держим главный поток, иначе JVM завершится сразу.
         Thread.currentThread().join();
     }
 

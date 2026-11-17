@@ -21,7 +21,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/** Два TCP-клиента должны обслуживаться параллельно (один не должен блокировать другого). */
 class DnsServerConcurrencyTest {
 
     @Test
@@ -62,7 +61,7 @@ class DnsServerConcurrencyTest {
                 int len = holderIn.readUnsignedShort();
                 byte[] resp = new byte[len];
                 holderIn.readFully(resp);
-                // Держим соединение открытым, пока второй клиент стучится.
+                // Держим соединение открытым, пока другой клиент стучится.
                 threads[0].start();
                 Thread.sleep(200);
                 threads[1].start();
