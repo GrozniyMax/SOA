@@ -125,9 +125,15 @@ services:
       _JAVA_OPTIONS: ${OSCAR_JAVA_OPTIONS:--Xmx256m -XX:MaxMetaspaceSize=192m}
 
   eureka-dns:
-    build: ./eureka-dns
+    build:
+      context: ..
+      dockerfile: deploy/eureka-dns.Dockerfile
     environment:
       EUREKA_URL: http://eureka:8761/eureka
+      DNS_PORT: "8053"
+      POLL_INTERVAL_MS: "5000"
+      MAX_SNAPSHOT_AGE_MS: "30000"
+      _JAVA_OPTIONS: ${DNS_JAVA_OPTIONS:--Xmx128m}
     networks:
       default:
       discovery:

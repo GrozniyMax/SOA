@@ -8,9 +8,9 @@ VITE_ENV = VITE_MOVIE_API=/movie-service VITE_OSCAR_API=/oscar
 
 all: build up
 
-## build: jar-ы всех пяти модулей (appDist привязан к assemble) + фронтенд (Vite)
+## build: jar-ы всех модулей (appDist привязан к assemble) + фронтенд (Vite)
 build:
-	$(GRADLE) :movie-service:assemble :oscar-service:assemble :config-server:assemble :eureka-server:assemble :api-gateway:assemble
+	$(GRADLE) :movie-service:assemble :oscar-service:assemble :config-server:assemble :eureka-server:assemble :api-gateway:assemble :eureka-dns:assemble
 	$(VITE_ENV) npm --prefix frontend run build
 
 ## certs: генерация self-signed сертификатов для gateway и nginx
